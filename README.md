@@ -9,7 +9,7 @@ Telegram-бот для личных финансов: учёт доходов/р
 ## Быстрый старт
 
 ```bash
-cp .env.example .env
+cp .env .env
 # Заполните .env: BOT_TOKEN, POSTGRES_PASSWORD и т.д.
 
 docker-compose up --build
