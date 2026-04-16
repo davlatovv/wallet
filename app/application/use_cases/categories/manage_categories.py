@@ -52,3 +52,33 @@ class DeleteCategoryUseCase:
         deleted = await self._repo.delete(category_id, user_id)
         if not deleted:
             raise NotFoundError(f"Category {category_id} not found")
+
+
+class RenameCategoryUseCase:
+    def __init__(self, repo: AbstractCategoryRepository) -> None:
+        self._repo = repo
+
+    async def execute(
+        self,
+        category_id: int,
+        user_id: int,
+        name: str,
+        icon: str | None,
+    ) -> CategoryEntity:
+        cat = await self._repo.get_by_id(category_id, user_id)
+        if not cat:
+            raise NotFoundError(f"Category {category_id} not found")
+        updated = await self._repo.update(category_id, user_id, name, icon)
+        logger.info("Category renamed: user=%d id=%d name=%s", user_id, category_id, name)
+        return updated
+
+
+class GetCategoryUseCase:
+    def __init__(self, repo: AbstractCategoryRepository) -> None:
+        self._repo = repo
+
+    async def execute(self, category_id: int, user_id: int) -> CategoryEntity:
+        cat = await self._repo.get_by_id(category_id, user_id)
+        if not cat:
+            raise NotFoundError(f"Category {category_id} not found")
+        return cat

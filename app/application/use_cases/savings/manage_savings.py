@@ -3,8 +3,10 @@ from datetime import date
 from decimal import Decimal
 
 from app.domain.entities.savings import SavingsGoalEntity, SavingsStatus
+from app.domain.entities.transaction import TransactionType
 from app.domain.exceptions.base import NotFoundError, ValidationError
 from app.domain.repositories.abstract_savings import AbstractSavingsRepository
+from app.domain.repositories.abstract_transaction import AbstractTransactionRepository
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +31,13 @@ class CreateSavingsGoalUseCase:
 
 
 class AddToSavingsUseCase:
-    def __init__(self, repo: AbstractSavingsRepository) -> None:
+    def __init__(
+        self,
+        repo: AbstractSavingsRepository,
+        transaction_repo: AbstractTransactionRepository,
+    ) -> None:
         self._repo = repo
+        self._tx_repo = transaction_repo
 
     async def execute(self, goal_id: int, user_id: int, amount: Decimal) -> SavingsGoalEntity:
         if amount <= Decimal("0"):
@@ -38,6 +45,14 @@ class AddToSavingsUseCase:
         goal = await self._repo.add_funds(goal_id, user_id, amount)
         if not goal:
             raise NotFoundError(f"Savings goal {goal_id} not found")
+        # Record as SAVINGS transaction so it appears in balance and analytics
+        await self._tx_repo.create(
+            user_id=user_id,
+            amount=amount,
+            transaction_type=TransactionType.SAVINGS,
+            category_id=None,
+            note=f"Копилка: {goal.name}",
+        )
         logger.info("Savings funded: user=%d goal=%d amount=%s", user_id, goal_id, amount)
         return goal
 

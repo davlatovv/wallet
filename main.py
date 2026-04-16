@@ -54,15 +54,15 @@ async def main() -> None:
     # Routers
     dp.include_router(main_router)
 
-    # Notifications (single-user mode: read user_id from env or skip)
-    # In multi-user mode, scheduler would be per-user or use push notifications
-    # scheduler = setup_scheduler(bot, ...)
-    # scheduler.start()
+    # Payment reminders scheduler — sends notifications at 08:00 for due reminders
+    scheduler = setup_scheduler(bot, session_factory)
+    scheduler.start()
 
     logger.info("Bot started.")
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
+        scheduler.shutdown(wait=False)
         await engine.dispose()
         await bot.session.close()
         logger.info("Bot stopped.")

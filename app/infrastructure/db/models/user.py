@@ -23,4 +23,4 @@ class User(Base):
     budgets: Mapped[list["Budget"]] = relationship(back_populates="user", lazy="noload")
     debts: Mapped[list["Debt"]] = relationship(back_populates="user", lazy="noload")
     savings_goals: Mapped[list["SavingsGoal"]] = relationship(back_populates="user", lazy="noload")
-    installments: Mapped[list["Installment"]] = relationship(back_populates="user", lazy="noload")
+    reminders: Mapped[list["Reminder"]] = relationship(back_populates="user", lazy="noload")

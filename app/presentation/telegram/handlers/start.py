@@ -1,5 +1,6 @@
 from aiogram import Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from app.presentation.telegram.keyboards.main_menu import main_menu_keyboard
@@ -17,3 +18,9 @@ async def handle_start(message: Message) -> None:
         parse_mode="HTML",
         reply_markup=main_menu_keyboard(),
     )
+
+
+@router.message(Command("main"))
+async def handle_main(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer("Главное меню:", reply_markup=main_menu_keyboard())

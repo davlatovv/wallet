@@ -17,16 +17,24 @@ from app.application.use_cases.categories.manage_categories import (
     ListCategoriesUseCase,
     CreateCategoryUseCase,
     DeleteCategoryUseCase,
+    RenameCategoryUseCase,
+    GetCategoryUseCase,
 )
 from app.application.use_cases.debts.manage_debts import (
     AddDebtUseCase,
     SettleDebtUseCase,
     ListDebtsUseCase,
 )
-from app.application.use_cases.installments.manage_installments import (
-    AddInstallmentUseCase,
-    PayInstallmentMonthUseCase,
-    ListInstallmentsUseCase,
+from app.application.use_cases.reminders.manage_reminders import (
+    CreateCreditReminderUseCase,
+    CreateInstallmentReminderUseCase,
+    CreateEducationReminderUseCase,
+    CreateRegularReminderUseCase,
+    ListRemindersUseCase,
+    GetReminderDetailUseCase,
+    RecordPaymentUseCase,
+    DeleteReminderUseCase,
+    ListDueTodayUseCase,
 )
 from app.application.use_cases.savings.manage_savings import (
     CreateSavingsGoalUseCase,
@@ -35,11 +43,10 @@ from app.application.use_cases.savings.manage_savings import (
 )
 from app.application.use_cases.transactions.add_expense import AddExpenseUseCase
 from app.application.use_cases.transactions.add_income import AddIncomeUseCase
-from app.application.use_cases.transactions.get_balance import GetBalanceUseCase
 from app.infrastructure.db.repositories.budget import SQLAlchemyBudgetRepository
 from app.infrastructure.db.repositories.category import SQLAlchemyCategoryRepository
 from app.infrastructure.db.repositories.debt import SQLAlchemyDebtRepository
-from app.infrastructure.db.repositories.installment import SQLAlchemyInstallmentRepository
+from app.infrastructure.db.repositories.reminder import SQLAlchemyReminderRepository
 from app.infrastructure.db.repositories.savings import SQLAlchemySavingsRepository
 from app.infrastructure.db.repositories.transaction import SQLAlchemyTransactionRepository
 from app.infrastructure.db.repositories.user import SQLAlchemyUserRepository
@@ -57,7 +64,7 @@ class Container:
         self._budget_repo = SQLAlchemyBudgetRepository(session)
         self._debt_repo = SQLAlchemyDebtRepository(session)
         self._savings_repo = SQLAlchemySavingsRepository(session)
-        self._inst_repo = SQLAlchemyInstallmentRepository(session)
+        self._reminder_repo = SQLAlchemyReminderRepository(session)
 
     # ── Transactions ──────────────────────────────────────────────────────────
     @property
@@ -67,10 +74,6 @@ class Container:
     @property
     def add_income(self) -> AddIncomeUseCase:
         return AddIncomeUseCase(self._tx_repo)
-
-    @property
-    def get_balance(self) -> GetBalanceUseCase:
-        return GetBalanceUseCase(self._tx_repo)
 
     # ── Categories ────────────────────────────────────────────────────────────
     @property
@@ -88,6 +91,14 @@ class Container:
     @property
     def delete_category(self) -> DeleteCategoryUseCase:
         return DeleteCategoryUseCase(self._cat_repo)
+
+    @property
+    def rename_category(self) -> RenameCategoryUseCase:
+        return RenameCategoryUseCase(self._cat_repo)
+
+    @property
+    def get_category(self) -> GetCategoryUseCase:
+        return GetCategoryUseCase(self._cat_repo)
 
     # ── Budgets ───────────────────────────────────────────────────────────────
     @property
@@ -127,21 +138,45 @@ class Container:
 
     @property
     def add_to_savings(self) -> AddToSavingsUseCase:
-        return AddToSavingsUseCase(self._savings_repo)
+        return AddToSavingsUseCase(self._savings_repo, self._tx_repo)
 
     @property
     def list_savings(self) -> ListSavingsUseCase:
         return ListSavingsUseCase(self._savings_repo)
 
-    # ── Installments ──────────────────────────────────────────────────────────
+    # ── Reminders ─────────────────────────────────────────────────────────────
     @property
-    def add_installment(self) -> AddInstallmentUseCase:
-        return AddInstallmentUseCase(self._inst_repo)
+    def create_credit_reminder(self) -> CreateCreditReminderUseCase:
+        return CreateCreditReminderUseCase(self._reminder_repo)
 
     @property
-    def pay_installment_month(self) -> PayInstallmentMonthUseCase:
-        return PayInstallmentMonthUseCase(self._inst_repo)
+    def create_installment_reminder(self) -> CreateInstallmentReminderUseCase:
+        return CreateInstallmentReminderUseCase(self._reminder_repo)
 
     @property
-    def list_installments(self) -> ListInstallmentsUseCase:
-        return ListInstallmentsUseCase(self._inst_repo)
+    def create_education_reminder(self) -> CreateEducationReminderUseCase:
+        return CreateEducationReminderUseCase(self._reminder_repo)
+
+    @property
+    def create_regular_reminder(self) -> CreateRegularReminderUseCase:
+        return CreateRegularReminderUseCase(self._reminder_repo)
+
+    @property
+    def list_reminders(self) -> ListRemindersUseCase:
+        return ListRemindersUseCase(self._reminder_repo)
+
+    @property
+    def get_reminder_detail(self) -> GetReminderDetailUseCase:
+        return GetReminderDetailUseCase(self._reminder_repo)
+
+    @property
+    def record_payment(self) -> RecordPaymentUseCase:
+        return RecordPaymentUseCase(self._reminder_repo)
+
+    @property
+    def delete_reminder(self) -> DeleteReminderUseCase:
+        return DeleteReminderUseCase(self._reminder_repo)
+
+    @property
+    def list_due_today(self) -> ListDueTodayUseCase:
+        return ListDueTodayUseCase(self._reminder_repo)

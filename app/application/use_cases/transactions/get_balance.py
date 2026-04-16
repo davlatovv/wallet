@@ -10,10 +10,11 @@ from app.domain.repositories.abstract_transaction import AbstractTransactionRepo
 class BalanceResult:
     total_income: Decimal
     total_expense: Decimal
+    total_savings: Decimal
 
     @property
     def balance(self) -> Decimal:
-        return self.total_income - self.total_expense
+        return self.total_income - self.total_expense - self.total_savings
 
 
 class GetBalanceUseCase:
@@ -25,4 +26,5 @@ class GetBalanceUseCase:
         now = datetime.now(timezone.utc)
         income = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.INCOME)
         expense = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.EXPENSE)
-        return BalanceResult(total_income=income, total_expense=expense)
+        savings = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.SAVINGS)
+        return BalanceResult(total_income=income, total_expense=expense, total_savings=savings)

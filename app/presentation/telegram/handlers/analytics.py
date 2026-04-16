@@ -20,13 +20,21 @@ def _format_report(result) -> str:
         f"📊 <b>Отчёт: {label}</b>\n",
         f"📥 Доходы:  <b>{result.total_income:,.2f}</b>",
         f"📤 Расходы: <b>{result.total_expense:,.2f}</b>",
-        f"💼 Баланс:  <b>{result.balance:,.2f}</b>",
     ]
+    if result.total_savings > 0:
+        lines.append(f"🏦 Копилка: <b>{result.total_savings:,.2f}</b>")
+    sign = "+" if result.balance >= 0 else ""
+    lines.append(f"💼 Итого:   <b>{sign}{result.balance:,.2f}</b>")
+
     if result.expense_by_category:
         lines.append("\n<b>Расходы по категориям:</b>")
         for cat in result.expense_by_category[:7]:
-            bar = "█" * int(cat.percent / 10) + "░" * (10 - int(cat.percent / 10))
             lines.append(f"  {cat.category_name}: {cat.amount:,.2f} ({cat.percent}%)")
+
+    if result.total_savings > 0:
+        lines.append("\n<b>Накоплено в копилку за период:</b>")
+        lines.append(f"  🏦 {result.total_savings:,.2f}")
+
     return "\n".join(lines)
 
 

@@ -28,12 +28,13 @@ class ReportResult:
     to_dt: datetime
     total_income: Decimal
     total_expense: Decimal
+    total_savings: Decimal
     expense_by_category: list[CategoryBreakdown] = field(default_factory=list)
     income_by_category: list[CategoryBreakdown] = field(default_factory=list)
 
     @property
     def balance(self) -> Decimal:
-        return self.total_income - self.total_expense
+        return self.total_income - self.total_expense - self.total_savings
 
 
 def _period_range(period: ReportPeriod) -> tuple[datetime, datetime]:
@@ -57,6 +58,7 @@ class GetReportUseCase:
 
         income = await self._tx_repo.sum_by_period(user_id, from_dt, to_dt, TransactionType.INCOME)
         expense = await self._tx_repo.sum_by_period(user_id, from_dt, to_dt, TransactionType.EXPENSE)
+        savings = await self._tx_repo.sum_by_period(user_id, from_dt, to_dt, TransactionType.SAVINGS)
 
         expense_cats = await self._tx_repo.sum_by_category(user_id, from_dt, to_dt, TransactionType.EXPENSE)
         income_cats = await self._tx_repo.sum_by_category(user_id, from_dt, to_dt, TransactionType.INCOME)
@@ -74,6 +76,7 @@ class GetReportUseCase:
             to_dt=to_dt,
             total_income=income,
             total_expense=expense,
+            total_savings=savings,
             expense_by_category=to_breakdown(expense_cats, expense),
             income_by_category=to_breakdown(income_cats, income),
         )
