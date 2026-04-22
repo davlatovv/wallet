@@ -21,18 +21,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def run_migrations() -> None:
-    """Apply Alembic migrations on startup."""
+async def run_migrations(retries: int = 10, delay: float = 3.0) -> None:
+    """Apply Alembic migrations on startup, retrying if DB is not ready yet."""
     import subprocess, sys
-    logger.info("Applying database migrations...")
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        logger.error("Migration failed:\n%s", result.stderr)
-        raise RuntimeError("DB migration failed")
-    logger.info("Migrations applied.")
+    for attempt in range(1, retries + 1):
+        logger.info("Applying migrations (attempt %d/%d)...", attempt, retries)
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            logger.info("Migrations applied.")
+            return
+        logger.warning("Migration attempt %d failed:\n%s", attempt, result.stderr)
+        if attempt < retries:
+            await asyncio.sleep(delay)
+    raise RuntimeError("DB migration failed after %d attempts" % retries)
 
 
 async def main() -> None:

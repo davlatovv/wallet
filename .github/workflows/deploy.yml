@@ -54,11 +54,5 @@ jobs:
             echo "🐳 Rebuilding containers..."
             docker compose up -d --build --remove-orphans
 
-            echo "⏳ Waiting for DB to be ready..."
-            sleep 8
-
-            echo "🗄 Running migrations..."
-            docker compose exec -T bot alembic upgrade head
-
             echo "✅ Deploy complete"
             docker compose ps
