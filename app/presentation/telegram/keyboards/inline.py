@@ -65,6 +65,18 @@ def budget_period_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def currency_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🇺🇸 USD", callback_data="currency:USD"),
+                InlineKeyboardButton(text="🇺🇿 UZS", callback_data="currency:UZS"),
+                InlineKeyboardButton(text="💵 Наличные", callback_data="currency:CASH"),
+            ]
+        ]
+    )
+
+
 def action_item_keyboard(item_id: int, entity: str) -> InlineKeyboardMarkup:
     """Generic keyboard for viewing items: delete / close / back."""
     return InlineKeyboardMarkup(

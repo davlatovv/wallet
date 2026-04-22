@@ -8,7 +8,7 @@ from app.infrastructure.db.models.category import Category
 DEFAULT_EXPENSE_CATEGORIES = [
     ("🍔", "Еда"),
     ("🚗", "Транспорт"),
-    ("🏠", "Жильё"),
+    ("👨‍👩‍👧", "Семья"),
     ("💊", "Здоровье"),
     ("👗", "Одежда"),
     ("🎮", "Развлечения"),

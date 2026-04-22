@@ -10,6 +10,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
             ],
             [
                 KeyboardButton(text="📊 Статистика"),
+                KeyboardButton(text="🔔 Регулярные платежи"),
             ],
             [
                 KeyboardButton(text="📂 Категории"),
@@ -18,9 +19,6 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text="💳 Долги"),
                 KeyboardButton(text="🏦 Копилка"),
-            ],
-            [
-                KeyboardButton(text="🔔 Напоминалка"),
             ],
         ],
         resize_keyboard=True,

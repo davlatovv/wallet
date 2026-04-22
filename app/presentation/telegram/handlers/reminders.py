@@ -77,7 +77,7 @@ async def _show_reminders_list(target: Message | CallbackQuery, container: Conta
         kb = InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text="➕ Добавить", callback_data="rem_new")]]
         )
-        text = "🔔 <b>Напоминалка</b>\n\nУ вас нет активных напоминаний."
+        text = "🔔 <b>Регулярные платежи</b>\n\nУ вас нет активных напоминаний."
         if isinstance(target, Message):
             await target.answer(text, parse_mode="HTML", reply_markup=kb)
         else:
@@ -87,7 +87,7 @@ async def _show_reminders_list(target: Message | CallbackQuery, container: Conta
     active = [r for r in reminders if r.status == ReminderStatus.ACTIVE]
     completed = [r for r in reminders if r.status == ReminderStatus.COMPLETED]
 
-    summary_lines = [f"🔔 <b>Напоминалка</b>"]
+    summary_lines = [f"🔔 <b>Регулярные платежи</b>"]
     if active:
         summary_lines.append(f"Активных: <b>{len(active)}</b>")
         total_month = sum(r.payment_amount for r in active)
@@ -104,7 +104,7 @@ async def _show_reminders_list(target: Message | CallbackQuery, container: Conta
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
-@router.message(F.text == "🔔 Напоминалка")
+@router.message(F.text == "🔔 Регулярные платежи")
 async def reminders_menu(message: Message, container: Container) -> None:
     await _show_reminders_list(message, container)
 
@@ -119,7 +119,7 @@ async def reminders_list_cb(callback: CallbackQuery, container: Container) -> No
 async def reminders_back(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback.message.edit_text(
-        "🔔 Напоминалка",
+        "🔔 Регулярные платежи",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text="➕ Добавить", callback_data="rem_new")]]
         ),
