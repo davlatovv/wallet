@@ -33,7 +33,8 @@ async def run_migrations(retries: int = 10, delay: float = 3.0) -> None:
         if result.returncode == 0:
             logger.info("Migrations applied.")
             return
-        logger.warning("Migration attempt %d failed:\n%s", attempt, result.stderr)
+        output = (result.stdout + result.stderr).strip()
+        logger.warning("Migration attempt %d failed:\n%s", attempt, output)
         if attempt < retries:
             await asyncio.sleep(delay)
     raise RuntimeError("DB migration failed after %d attempts" % retries)

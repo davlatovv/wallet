@@ -25,7 +25,6 @@ exports/
 
 # DB
 *.sqlite3
-db/
 
 # Logs
 *.log
