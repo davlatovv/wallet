@@ -54,10 +54,8 @@ async def main() -> None:
     dp.update.middleware(DbSessionMiddleware(session_factory))
     dp.update.middleware(RegisterUserMiddleware())
 
-    # Routers
     dp.include_router(main_router)
 
-    # Payment reminders scheduler — sends notifications at 08:00 for due reminders
     scheduler = setup_scheduler(bot, session_factory)
     scheduler.start()
 
