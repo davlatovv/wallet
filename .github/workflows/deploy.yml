@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 env:
-  DEPLOY_DIR: /opt/wallet-bot
+  DEPLOY_DIR: /home/zafar/wallet
 
 jobs:
   # ── Проверка синтаксиса ────────────────────────────────────────────────────
