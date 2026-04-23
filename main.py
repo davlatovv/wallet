@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_migrations(retries: int = 10, delay: float = 3.0) -> None:
-    """Apply Alembic migrations on startup, retrying if DB is not ready yet."""
+
     import subprocess, sys
     for attempt in range(1, retries + 1):
         logger.info("Applying migrations (attempt %d/%d)...", attempt, retries)
