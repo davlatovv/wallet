@@ -39,7 +39,6 @@ async def run_migrations(retries: int = 10, delay: float = 3.0) -> None:
             await asyncio.sleep(delay)
     raise RuntimeError("DB migration failed after %d attempts" % retries)
 
-
 async def main() -> None:
     await run_migrations()
 
