@@ -51,7 +51,6 @@ async def main() -> None:
     )
     dp = Dispatcher(storage=MemoryStorage())
 
-    # Middlewares
     dp.update.middleware(DbSessionMiddleware(session_factory))
     dp.update.middleware(RegisterUserMiddleware())
 
