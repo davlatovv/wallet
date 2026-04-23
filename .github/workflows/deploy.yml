@@ -46,6 +46,8 @@ jobs:
           script: |
             set -e
 
+            git config --global --add safe.directory ${{ env.DEPLOY_DIR }}
+
             cd ${{ env.DEPLOY_DIR }}
 
             echo "📥 Pulling latest code..."
