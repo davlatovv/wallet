@@ -42,6 +42,19 @@ def period_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def report_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📅 Сегодня", callback_data="report:day"),
+                InlineKeyboardButton(text="📆 Неделя", callback_data="report:week"),
+                InlineKeyboardButton(text="🗓 Месяц", callback_data="report:month"),
+            ],
+            [InlineKeyboardButton(text="◀️ К балансу", callback_data="analytics_balance")],
+        ]
+    )
+
+
 def debt_type_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

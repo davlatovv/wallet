@@ -43,6 +43,7 @@ from app.application.use_cases.savings.manage_savings import (
 )
 from app.application.use_cases.transactions.add_expense import AddExpenseUseCase
 from app.application.use_cases.transactions.add_income import AddIncomeUseCase
+from app.application.use_cases.transactions.get_balance import GetBalanceUseCase
 from app.infrastructure.db.repositories.budget import SQLAlchemyBudgetRepository
 from app.infrastructure.db.repositories.category import SQLAlchemyCategoryRepository
 from app.infrastructure.db.repositories.debt import SQLAlchemyDebtRepository
@@ -74,6 +75,10 @@ class Container:
     @property
     def add_income(self) -> AddIncomeUseCase:
         return AddIncomeUseCase(self._tx_repo)
+
+    @property
+    def get_balance(self) -> GetBalanceUseCase:
+        return GetBalanceUseCase(self._tx_repo)
 
     # ── Categories ────────────────────────────────────────────────────────────
     @property
