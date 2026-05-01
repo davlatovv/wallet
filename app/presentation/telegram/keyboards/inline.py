@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.domain.entities.category import CategoryEntity
+from app.domain.entities.debt import DebtEntity
 
 _MONTHS_RU = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
 
@@ -110,6 +111,17 @@ def currency_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def debt_picker_keyboard(debts: list[DebtEntity], action_prefix: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for d in debts:
+        label = f"{d.counterparty}: {d.amount:,.0f} UZS"
+        builder.button(text=label, callback_data=f"{action_prefix}:{d.id}")
+    builder.adjust(1)
+    builder.row(InlineKeyboardButton(text="✏️ Ввести вручную", callback_data=f"{action_prefix}:manual"))
+    builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="cancel"))
+    return builder.as_markup()
 
 
 def action_item_keyboard(item_id: int, entity: str) -> InlineKeyboardMarkup:

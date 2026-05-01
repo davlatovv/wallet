@@ -5,9 +5,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from app.application.dto.transaction import AddTransactionDTO
+from app.domain.entities.debt import DebtType, DebtStatus
 from app.infrastructure.container import Container
 from app.infrastructure.currency.cbu_client import get_usd_rate
-from app.presentation.telegram.keyboards.inline import categories_keyboard, confirm_keyboard, currency_keyboard
+from app.presentation.telegram.keyboards.inline import (
+    categories_keyboard, confirm_keyboard, currency_keyboard, debt_picker_keyboard,
+)
 from app.presentation.telegram.keyboards.main_menu import main_menu_keyboard
 from app.presentation.telegram.states.income import IncomeStates
 
@@ -40,11 +43,59 @@ async def start_income(message: Message, state: FSMContext, container: Container
 
 
 @router.callback_query(IncomeStates.waiting_for_category, F.data.startswith("inc_cat:"))
-async def income_category_selected(callback: CallbackQuery, state: FSMContext) -> None:
+async def income_category_selected(callback: CallbackQuery, state: FSMContext, container: Container) -> None:
     category_id = int(callback.data.split(":")[1])
     await state.update_data(category_id=category_id)
+
+    cat = await container.get_category.execute(category_id, callback.from_user.id)
+    if cat and cat.name == "Долги":
+        debts = await container.list_debts.execute(callback.from_user.id, status=DebtStatus.ACTIVE)
+        owed_to_me = [d for d in debts if d.debt_type == DebtType.OWED_TO_ME]
+        if owed_to_me:
+            await state.set_state(IncomeStates.waiting_for_debt)
+            await callback.message.edit_text(
+                "💳 <b>Выберите долг, который вам вернули:</b>",
+                parse_mode="HTML",
+                reply_markup=debt_picker_keyboard(owed_to_me, "inc_debt"),
+            )
+            await callback.answer()
+            return
+
     await state.set_state(IncomeStates.waiting_for_amount)
     await callback.message.edit_text("Введите сумму дохода:")
+    await callback.answer()
+
+
+@router.callback_query(IncomeStates.waiting_for_debt, F.data.startswith("inc_debt:"))
+async def income_debt_selected(callback: CallbackQuery, state: FSMContext, container: Container) -> None:
+    value = callback.data.split(":")[1]
+    if value == "manual":
+        await state.set_state(IncomeStates.waiting_for_amount)
+        await callback.message.edit_text("Введите сумму дохода:")
+        await callback.answer()
+        return
+
+    debt_id = int(value)
+    debts = await container.list_debts.execute(callback.from_user.id, status=DebtStatus.ACTIVE)
+    debt = next((d for d in debts if d.id == debt_id), None)
+    if not debt:
+        await callback.answer("Долг не найден.", show_alert=True)
+        return
+
+    await state.update_data(
+        debt_id=debt_id,
+        amount=str(debt.amount),
+        currency="UZS",
+        note=f"Возврат долга: {debt.counterparty}",
+    )
+    await state.set_state(IncomeStates.confirming)
+    await callback.message.edit_text(
+        f"📋 <b>Подтвердите доход:</b>\n\n"
+        f"💰 Сумма: <b>{debt.amount:,.0f} UZS</b>\n"
+        f"💳 Долг от <b>{debt.counterparty}</b> будет закрыт",
+        parse_mode="HTML",
+        reply_markup=confirm_keyboard("inc_confirm", "cancel"),
+    )
     await callback.answer()
 
 
@@ -119,9 +170,19 @@ async def income_confirmed(callback: CallbackQuery, state: FSMContext, container
         note=data.get("note"),
     )
     await container.add_income.execute(dto)
+
+    debt_id = data.get("debt_id")
+    debt_closed_text = ""
+    if debt_id:
+        try:
+            debt = await container.settle_debt.execute(debt_id, callback.from_user.id)
+            debt_closed_text = f"\n💳 Долг от <b>{debt.counterparty}</b> закрыт!"
+        except Exception:
+            pass
+
     await state.clear()
     await callback.message.edit_text(
-        f"✅ Доход <b>{dto.amount:,.0f} UZS</b> добавлен!",
+        f"✅ Доход <b>{dto.amount:,.0f} UZS</b> добавлен!{debt_closed_text}",
         parse_mode="HTML",
     )
     await callback.message.answer("Главное меню:", reply_markup=main_menu_keyboard())
