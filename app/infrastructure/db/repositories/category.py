@@ -30,6 +30,10 @@ DEFAULT_INCOME_CATEGORIES = [
     ("💰", "Прочий доход"),
 ]
 
+DEFAULT_BOTH_CATEGORIES = [
+    ("💳", "Долги"),
+]
+
 
 def _to_entity(row: Category) -> CategoryEntity:
     return CategoryEntity(
@@ -116,5 +120,8 @@ class SQLAlchemyCategoryRepository(AbstractCategoryRepository):
             self._session.add(cat)
         for icon, name in DEFAULT_INCOME_CATEGORIES:
             cat = Category(user_id=user_id, name=name, icon=icon, category_type="income", is_system=True)
+            self._session.add(cat)
+        for icon, name in DEFAULT_BOTH_CATEGORIES:
+            cat = Category(user_id=user_id, name=name, icon=icon, category_type="both", is_system=True)
             self._session.add(cat)
         await self._session.flush()

@@ -1,9 +1,10 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, BufferedInputFile
 
 from app.application.use_cases.analytics.get_report import ReportPeriod
 from app.infrastructure.container import Container
-from app.presentation.telegram.keyboards.inline import period_keyboard, report_keyboard
+from app.infrastructure.export.excel_exporter import ExcelExporter
+from app.presentation.telegram.keyboards.inline import period_keyboard, report_keyboard, export_month_keyboard
 
 router = Router(name="analytics")
 
@@ -72,3 +73,30 @@ async def handle_report(callback: CallbackQuery, container: Container) -> None:
     result = await container.get_report.execute(callback.from_user.id, period)
     await callback.message.edit_text(_format_report(result), parse_mode="HTML", reply_markup=report_keyboard())
     await callback.answer()
+
+
+_MONTHS_RU_FULL = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                   "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+
+
+@router.callback_query(F.data == "export_xlsx_menu")
+async def handle_export_xlsx_menu(callback: CallbackQuery) -> None:
+    await callback.message.edit_text(
+        "📥 <b>Выгрузка в Excel</b>\n\nВыберите месяц:",
+        parse_mode="HTML",
+        reply_markup=export_month_keyboard(),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("export_xlsx_month:"))
+async def handle_export_xlsx_month(callback: CallbackQuery, container: Container) -> None:
+    _, year_str, month_str = callback.data.split(":")
+    year, month = int(year_str), int(month_str)
+    await callback.answer("Генерирую Excel...")
+    data = await ExcelExporter(container._tx_repo).export_by_month(callback.from_user.id, year, month)
+    month_name = f"{_MONTHS_RU_FULL[month - 1]} {year}"
+    await callback.message.answer_document(
+        BufferedInputFile(data, filename=f"transactions_{year}_{month:02d}.xlsx"),
+        caption=f"📊 Транзакции за {month_name}",
+    )

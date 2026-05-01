@@ -1,7 +1,11 @@
+from datetime import datetime, timezone
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.domain.entities.category import CategoryEntity
+
+_MONTHS_RU = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
 
 
 def categories_keyboard(
@@ -37,7 +41,8 @@ def period_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📅 Сегодня", callback_data="report:day"),
                 InlineKeyboardButton(text="📆 Неделя", callback_data="report:week"),
                 InlineKeyboardButton(text="🗓 Месяц", callback_data="report:month"),
-            ]
+            ],
+            [InlineKeyboardButton(text="📥 Скачать Excel", callback_data="export_xlsx_menu")],
         ]
     )
 
@@ -50,9 +55,26 @@ def report_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📆 Неделя", callback_data="report:week"),
                 InlineKeyboardButton(text="🗓 Месяц", callback_data="report:month"),
             ],
+            [InlineKeyboardButton(text="📥 Скачать Excel", callback_data="export_xlsx_menu")],
             [InlineKeyboardButton(text="◀️ К балансу", callback_data="analytics_balance")],
         ]
     )
+
+
+def export_month_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    now = datetime.now(timezone.utc)
+    for i in range(12):
+        month = now.month - i
+        year = now.year
+        if month <= 0:
+            month += 12
+            year -= 1
+        label = f"{_MONTHS_RU[month - 1]} {year}"
+        builder.button(text=label, callback_data=f"export_xlsx_month:{year}:{month}")
+    builder.adjust(3)
+    builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="analytics_balance"))
+    return builder.as_markup()
 
 
 def debt_type_keyboard() -> InlineKeyboardMarkup:
