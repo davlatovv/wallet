@@ -50,8 +50,25 @@ jobs:
 
             cd ${{ env.DEPLOY_DIR }}
 
+            ENV_BACKUP=""
+            restore_env() {
+              if [ -n "$ENV_BACKUP" ] && [ -f "$ENV_BACKUP" ]; then
+                mv "$ENV_BACKUP" .env
+              fi
+            }
+            trap restore_env EXIT
+
+            if git ls-files --error-unmatch .env >/dev/null 2>&1 && [ -f .env ]; then
+              ENV_BACKUP="$(mktemp)"
+              cp .env "$ENV_BACKUP"
+              git checkout -- .env
+            fi
+
             echo "📥 Pulling latest code..."
             git pull origin master
+
+            restore_env
+            trap - EXIT
 
             echo "🐳 Rebuilding containers..."
             docker compose up -d --build --remove-orphans
