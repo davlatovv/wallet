@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, func, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -82,6 +82,17 @@ class SQLAlchemyTransactionRepository(AbstractTransactionRepository):
             e.category_name = cat_name
             entities.append(e)
         return entities
+
+    async def list_available_months(self, user_id: int) -> list[tuple[int, int]]:
+        year_expr = extract("year", Transaction.created_at).label("year")
+        month_expr = extract("month", Transaction.created_at).label("month")
+        result = await self._session.execute(
+            select(year_expr, month_expr)
+            .where(Transaction.user_id == user_id)
+            .group_by(year_expr, month_expr)
+            .order_by(year_expr.desc(), month_expr.desc())
+        )
+        return [(int(row.year), int(row.month)) for row in result.all()]
 
     async def delete(self, transaction_id: int, user_id: int) -> bool:
         result = await self._session.execute(

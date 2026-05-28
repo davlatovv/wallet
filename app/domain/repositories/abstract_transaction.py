@@ -32,6 +32,11 @@ class AbstractTransactionRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_available_months(self, user_id: int) -> list[tuple[int, int]]:
+        """Returns available transaction months as (year, month), newest first."""
+        ...
+
+    @abstractmethod
     async def delete(self, transaction_id: int, user_id: int) -> bool:
         ...
 

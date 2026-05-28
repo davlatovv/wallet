@@ -29,9 +29,13 @@ class ExcelExporter:
         return await self.export_by_month(user_id, now.year, now.month)
 
     async def export_by_month(self, user_id: int, year: int, month: int) -> bytes:
+        now = datetime.now(timezone.utc)
         from_dt = datetime(year, month, 1, tzinfo=timezone.utc)
-        last_day = calendar.monthrange(year, month)[1]
-        to_dt = datetime(year, month, last_day, 23, 59, 59, tzinfo=timezone.utc)
+        if year == now.year and month == now.month:
+            to_dt = now
+        else:
+            last_day = calendar.monthrange(year, month)[1]
+            to_dt = datetime(year, month, last_day, 23, 59, 59, tzinfo=timezone.utc)
         transactions = await self._tx_repo.list_by_period(user_id, from_dt, to_dt)
 
         wb = Workbook()

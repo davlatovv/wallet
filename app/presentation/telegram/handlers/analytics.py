@@ -80,11 +80,17 @@ _MONTHS_RU_FULL = ["Январь", "Февраль", "Март", "Апрель",
 
 
 @router.callback_query(F.data == "export_xlsx_menu")
-async def handle_export_xlsx_menu(callback: CallbackQuery) -> None:
+async def handle_export_xlsx_menu(callback: CallbackQuery, container: Container) -> None:
+    months = await container._tx_repo.list_available_months(callback.from_user.id)
+    text = (
+        "📥 <b>Выгрузка в Excel</b>\n\nВыберите месяц:"
+        if months
+        else "📥 <b>Выгрузка в Excel</b>\n\nПока нет транзакций для экспорта."
+    )
     await callback.message.edit_text(
-        "📥 <b>Выгрузка в Excel</b>\n\nВыберите месяц:",
+        text,
         parse_mode="HTML",
-        reply_markup=export_month_keyboard(),
+        reply_markup=export_month_keyboard(months),
     )
     await callback.answer()
 

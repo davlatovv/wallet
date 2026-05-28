@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -62,18 +60,13 @@ def report_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def export_month_keyboard() -> InlineKeyboardMarkup:
+def export_month_keyboard(months: list[tuple[int, int]]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    now = datetime.now(timezone.utc)
-    for i in range(12):
-        month = now.month - i
-        year = now.year
-        if month <= 0:
-            month += 12
-            year -= 1
+    for year, month in months:
         label = f"{_MONTHS_RU[month - 1]} {year}"
         builder.button(text=label, callback_data=f"export_xlsx_month:{year}:{month}")
-    builder.adjust(3)
+    if months:
+        builder.adjust(3)
     builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="analytics_balance"))
     return builder.as_markup()
 
