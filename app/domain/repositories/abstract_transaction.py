@@ -14,6 +14,9 @@ class AbstractTransactionRepository(ABC):
         transaction_type: TransactionType,
         category_id: int | None,
         note: str | None,
+        currency: str = "UZS",
+        original_amount: Decimal | None = None,
+        usd_rate: Decimal | None = None,
     ) -> TransactionEntity:
         ...
 
@@ -59,4 +62,14 @@ class AbstractTransactionRepository(ABC):
         transaction_type: TransactionType,
     ) -> list[tuple[int, str, Decimal]]:
         """Returns list of (category_id, category_name, total_amount)."""
+        ...
+
+    @abstractmethod
+    async def sum_balance_by_currency(
+        self,
+        user_id: int,
+        from_dt: datetime,
+        to_dt: datetime,
+    ) -> list[tuple[str, Decimal]]:
+        """Returns net balance grouped by currency/account type."""
         ...

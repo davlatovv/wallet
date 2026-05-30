@@ -19,4 +19,7 @@ class TransactionEntity:
     category_id: int | None
     note: str | None
     created_at: datetime
+    currency: str = "UZS"
+    original_amount: Decimal | None = None
+    usd_rate: Decimal | None = None
     category_name: str | None = field(default=None)

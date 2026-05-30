@@ -168,6 +168,9 @@ async def income_confirmed(callback: CallbackQuery, state: FSMContext, container
         amount=Decimal(data["amount"]),
         category_id=data.get("category_id"),
         note=data.get("note"),
+        currency=data.get("currency", "UZS"),
+        original_amount=Decimal(data["original_amount"]) if data.get("original_amount") else None,
+        usd_rate=Decimal(data["usd_rate"]) if data.get("usd_rate") else None,
     )
     await container.add_income.execute(dto)
 

@@ -18,6 +18,9 @@ class AddIncomeUseCase:
             transaction_type=TransactionType.INCOME,
             category_id=dto.category_id,
             note=dto.note,
+            currency=dto.currency,
+            original_amount=dto.original_amount,
+            usd_rate=dto.usd_rate,
         )
         logger.info("Income created: user=%d amount=%s", dto.user_id, dto.amount)
         return transaction

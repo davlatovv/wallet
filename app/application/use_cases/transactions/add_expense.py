@@ -49,6 +49,9 @@ class AddExpenseUseCase:
             transaction_type=TransactionType.EXPENSE,
             category_id=dto.category_id,
             note=dto.note,
+            currency=dto.currency,
+            original_amount=dto.original_amount,
+            usd_rate=dto.usd_rate,
         )
         logger.info("Expense created: user=%d amount=%s", dto.user_id, dto.amount)
 

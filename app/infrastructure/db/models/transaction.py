@@ -19,6 +19,9 @@ class Transaction(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     transaction_type: Mapped[str] = mapped_column(String(8), nullable=False)  # income / expense
+    currency: Mapped[str] = mapped_column(String(8), default="UZS", server_default="UZS", nullable=False)
+    original_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    usd_rate: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     category_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

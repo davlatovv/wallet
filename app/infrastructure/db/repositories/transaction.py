@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select, delete, func, extract
+from sqlalchemy import select, delete, func, extract, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -20,6 +20,9 @@ def _to_entity(row: Transaction) -> TransactionEntity:
         category_id=row.category_id,
         note=row.note,
         created_at=row.created_at,
+        currency=row.currency,
+        original_amount=row.original_amount,
+        usd_rate=row.usd_rate,
     )
 
 
@@ -34,6 +37,9 @@ class SQLAlchemyTransactionRepository(AbstractTransactionRepository):
         transaction_type: TransactionType,
         category_id: int | None,
         note: str | None,
+        currency: str = "UZS",
+        original_amount: Decimal | None = None,
+        usd_rate: Decimal | None = None,
     ) -> TransactionEntity:
         tx = Transaction(
             user_id=user_id,
@@ -41,6 +47,9 @@ class SQLAlchemyTransactionRepository(AbstractTransactionRepository):
             transaction_type=transaction_type.value,
             category_id=category_id,
             note=note,
+            currency=currency,
+            original_amount=original_amount,
+            usd_rate=usd_rate,
         )
         self._session.add(tx)
         await self._session.flush()
@@ -144,3 +153,28 @@ class SQLAlchemyTransactionRepository(AbstractTransactionRepository):
             .order_by(func.sum(Transaction.amount).desc())
         )
         return [(row.id, row.name, Decimal(str(row.total))) for row in result.all()]
+
+    async def sum_balance_by_currency(
+        self,
+        user_id: int,
+        from_dt: datetime,
+        to_dt: datetime,
+    ) -> list[tuple[str, Decimal]]:
+        currency_expr = func.coalesce(Transaction.currency, "UZS").label("currency")
+        signed_amount = case(
+            (Transaction.transaction_type == TransactionType.INCOME.value, Transaction.amount),
+            else_=-Transaction.amount,
+        )
+        result = await self._session.execute(
+            select(
+                currency_expr,
+                func.coalesce(func.sum(signed_amount), 0).label("total"),
+            )
+            .where(
+                Transaction.user_id == user_id,
+                Transaction.created_at >= from_dt,
+                Transaction.created_at <= to_dt,
+            )
+            .group_by(currency_expr)
+        )
+        return [(row.currency, Decimal(str(row.total))) for row in result.all()]

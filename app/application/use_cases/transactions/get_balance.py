@@ -11,6 +11,7 @@ class BalanceResult:
     total_income: Decimal
     total_expense: Decimal
     total_savings: Decimal
+    balance_by_currency: dict[str, Decimal]
 
     @property
     def balance(self) -> Decimal:
@@ -27,4 +28,10 @@ class GetBalanceUseCase:
         income = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.INCOME)
         expense = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.EXPENSE)
         savings = await self._tx_repo.sum_by_period(user_id, far_past, now, TransactionType.SAVINGS)
-        return BalanceResult(total_income=income, total_expense=expense, total_savings=savings)
+        balance_rows = await self._tx_repo.sum_balance_by_currency(user_id, far_past, now)
+        return BalanceResult(
+            total_income=income,
+            total_expense=expense,
+            total_savings=savings,
+            balance_by_currency=dict(balance_rows),
+        )
