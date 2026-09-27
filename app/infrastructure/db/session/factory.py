@@ -41,3 +41,10 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     factory = async_session_factory()
     async with factory() as session:
         yield session
+
+
+async def dispose_engine() -> None:
+    global _engine, _session_factory
+    if _engine is not None:
+        await _engine.dispose()
+    _engine = _session_factory = None

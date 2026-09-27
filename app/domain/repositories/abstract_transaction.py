@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
-from app.domain.entities.transaction import TransactionEntity, TransactionType
+from app.domain.entities.transaction import AccountType, TransactionEntity, TransactionType
 
 
 class AbstractTransactionRepository(ABC):
@@ -15,13 +16,39 @@ class AbstractTransactionRepository(ABC):
         category_id: int | None,
         note: str | None,
         currency: str = "UZS",
+        account_type: AccountType = AccountType.CARD,
         original_amount: Decimal | None = None,
         usd_rate: Decimal | None = None,
     ) -> TransactionEntity:
         ...
 
     @abstractmethod
-    async def get_by_id(self, transaction_id: int, user_id: int) -> TransactionEntity | None:
+    async def get_by_id(
+        self, transaction_id: int, user_id: int, for_update: bool = False
+    ) -> TransactionEntity | None:
+        """`for_update` locks the row until the surrounding DB transaction ends."""
+        ...
+
+    @abstractmethod
+    async def list_page(
+        self,
+        user_id: int,
+        limit: int,
+        transaction_type: TransactionType | None = None,
+        category_id: int | None = None,
+        from_dt: datetime | None = None,
+        to_dt: datetime | None = None,
+        before: tuple[datetime, int] | None = None,
+    ) -> list[TransactionEntity]:
+        """Newest first (created_at, id). `before` is the (created_at, id) of the last
+        row of the previous page; only strictly older rows are returned."""
+        ...
+
+    @abstractmethod
+    async def update(
+        self, transaction_id: int, user_id: int, changes: dict[str, Any]
+    ) -> TransactionEntity | None:
+        """Applies column changes (keys are TransactionEntity field names)."""
         ...
 
     @abstractmethod
@@ -50,6 +77,7 @@ class AbstractTransactionRepository(ABC):
         from_dt: datetime,
         to_dt: datetime,
         transaction_type: TransactionType,
+        category_id: int | None = None,
     ) -> Decimal:
         ...
 

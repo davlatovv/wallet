@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 
@@ -27,3 +27,11 @@ class BudgetEntity:
 
     def is_warn_threshold_reached(self, spent: Decimal, threshold: Decimal) -> bool:
         return self.usage_ratio(spent) >= threshold
+
+
+_PERIOD_DAYS = {BudgetPeriod.DAILY: 1, BudgetPeriod.WEEKLY: 7, BudgetPeriod.MONTHLY: 30}
+
+
+def budget_window_start(period: BudgetPeriod, now: datetime) -> datetime:
+    """Budgets are measured over a rolling window ending now (1 / 7 / 30 days)."""
+    return now - timedelta(days=_PERIOD_DAYS[period])

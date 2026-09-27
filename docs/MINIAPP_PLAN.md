@@ -93,7 +93,7 @@ Layer rule is unchanged: routers call use cases only. There is no SQL in routers
 | Reminders | `GET /reminders`, `POST /reminders/{credit|installment|education|regular}`, `GET /reminders/{id}`, `POST /reminders/{id}/payments`, `DELETE /reminders/{id}` |
 | Export | `GET /export/transactions?format=csv|xlsx&month=YYYY-MM` (file download) |
 
-Conventions: money is serialized as a **decimal string** (never float), timestamps are ISO-8601 UTC, and errors use `{code, message, details}` (`NotFoundError`→404, validation→422, domain rule→409/400). OpenAPI is auto-generated and used to generate TS types for the frontend (`openapi-typescript`).
+Conventions: money is serialized as a **decimal string with exactly 2 decimals** (never float), timestamps are ISO-8601 UTC, and errors use `{code, message, details}` (`NotFoundError`→404, validation→422, domain rule→409/400). OpenAPI is auto-generated and used to generate TS types for the frontend (`openapi-typescript`).
 
 ### 3.5 Frontend structure and UX
 
@@ -124,7 +124,7 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 
 ### Phase 0. Baseline and prerequisites
 - ☐ **0.1** Finish and commit the in-progress multi-currency / account-balance work (`0006_add_user_account_balances.py`, transaction and user changes). Run `alembic upgrade head` on a scratch DB. DoD: clean `git status`.
-- ☐ **0.2** Create `tests/` with pytest, pytest-asyncio and pytest-mock config. Add tests for `Money`, `AddTransactionDTO`, `AddExpenseUseCase`, `AddIncomeUseCase` and `GetBalanceUseCase` (fake repos). DoD: `pytest` green in CI.
+- ✅ **0.2** Create `tests/` with pytest, pytest-asyncio and pytest-mock config. Add tests for `Money`, `AddTransactionDTO`, `AddExpenseUseCase`, `AddIncomeUseCase` and `GetBalanceUseCase` (fake repos). DoD: `pytest` green in CI.
 - ☐ **0.3** Add a `test` job to `.github/workflows/deploy.yml` (currently lint is only `py_compile`).
 - ☐ **0.4** Decide the domain name and point DNS at the VPS. Create a bot in BotFather, and later set the Mini App URL and menu button. DoD: `https://<domain>` reachable.
 
@@ -135,22 +135,22 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ☐ **1.4** Write the OpenAPI contract draft (schemas for money, pagination, errors) and review it against the screens. Every screen must map to endpoints.
 
 ### Phase 2. Backend: API layer
-- ☐ **2.1** Add deps (`fastapi`, `uvicorn`, `pyjwt`, `python-multipart`) to `pyproject.toml`. Create the `presentation/api` skeleton, app factory, `/health`, error handlers, and CORS limited to the app origin.
-- ☐ **2.2** `get_session` dependency (one transaction per request, mirroring `DbSessionMiddleware`) and `get_container`.
-- ☐ **2.3** Telegram `initData` validation plus `POST /auth/telegram` and the JWT dependency `get_current_user`. Unit tests: valid, tampered, expired and missing hash.
-- ☐ **2.4** Settings additions: `jwt_secret`, `jwt_ttl_minutes`, `webapp_url`, `cors_origins`, `api_port`.
-- ☐ **2.5** `GET /me`, `PATCH /me`, `GET /balance`, `GET /currency/usd-rate`. Move USD-rate and currency to account logic from handlers into use cases so the API and bot share it.
-- ☐ **2.6** New use cases + repo methods: `ListTransactions` (filters, cursor), `UpdateTransaction`, `DeleteTransaction`. Both must **reverse or reapply the user's account balances** consistently (see 0006 logic), in a single DB transaction. Tests for balance correctness.
-- ☐ **2.7** Transactions router (list, expense, income, patch, delete). The expense response includes `BudgetAlert`s.
-- ☐ **2.8** Categories router.
-- ☐ **2.9** Budgets router.
-- ☐ **2.10** Analytics router (`report`, `months`).
-- ☐ **2.11** Debts router. Fill in gaps (settle validation, and check whether an edit or delete use case is needed).
-- ☐ **2.12** Savings router.
-- ☐ **2.13** Reminders router (four create endpoints, detail, payment, delete). Reuse the DTOs and `CreditCalculator`. Add a schedule preview endpoint `POST /reminders/credit/preview`.
-- ☐ **2.14** Export use case (`app/application/use_cases/export`) wrapping the exporters. Remove the `container._tx_repo` access. Router streams CSV/XLSX.
-- ☐ **2.15** Router-level tests (httpx `AsyncClient` + test DB or overridden container): auth required, cross-user isolation, error mapping.
-- ☐ **2.16** Rate limiting (per user) and request logging (structlog, already a dependency).
+- ✅ **2.1** Add deps (`fastapi`, `uvicorn`, `pyjwt`, `python-multipart`) to `pyproject.toml`. Create the `presentation/api` skeleton, app factory, `/health`, error handlers, and CORS limited to the app origin.
+- ✅ **2.2** `get_session` dependency (one transaction per request, mirroring `DbSessionMiddleware`) and `get_container`.
+- ✅ **2.3** Telegram `initData` validation plus `POST /auth/telegram` and the JWT dependency `get_current_user`. Unit tests: valid, tampered, expired and missing hash.
+- ✅ **2.4** Settings additions: `jwt_secret`, `jwt_ttl_minutes`, `webapp_url`, `cors_origins`, `api_port`.
+- ✅ **2.5** `GET /me`, `PATCH /me` (timezone, validated against `pytz.all_timezones_set`), `GET /balance`, `GET /currency/usd-rate`; USD conversion lives in `PrepareTransactionUseCase`. _Bot handlers still convert USD and check budgets themselves rather than calling the shared use cases — left for Phase 5 cutover, tracked below._
+- ✅ **2.6** New use cases + repo methods: `ListTransactions` (filters, cursor), `UpdateTransaction`, `DeleteTransaction`. Both must **reverse or reapply the user's account balances** consistently (see 0006 logic), in a single DB transaction. Tests for balance correctness. _Decisions: SAVINGS transactions are read-only here (managed via savings goals); type cannot change; a new category must belong to the user; rows are locked `FOR UPDATE`. Follow-up: `add_expense`/`add_income` do not yet check category ownership._
+- ✅ **2.7** Transactions router (list, expense, income, patch, delete). The expense response includes `BudgetAlert`s.
+- ✅ **2.8** Categories router. _System-category protection and parent/type validation moved from the bot UI into the use cases._
+- ✅ **2.9** Budgets router. _`PUT /budgets` upserts per (category, period); `GET` returns spent/ratio. Fixed: category budgets were checked against ALL expenses._
+- ✅ **2.10** Analytics router (`report`, `months`).
+- ✅ **2.11** Debts router. _Added input validation and `DELETE /debts/{id}` (debts have no balance effect)._ Fill in gaps (settle validation, and check whether an edit or delete use case is needed).
+- ✅ **2.12** Savings router. _Deposits only to ACTIVE goals; `add_funds` is now an atomic increment. No savings delete endpoint yet (needs a decision on returning funds)._
+- ✅ **2.13** Reminders router (four create endpoints, detail, payment, delete). Reuse the DTOs and `CreditCalculator`. Add a schedule preview endpoint `POST /reminders/credit/preview`. _Done. Requests take only `first_payment_date` (payment day is derived). Fixed on the way: differential credits recorded/showed the first month's amount forever; payment dates drifted after short months (31st -> 28th); credits with interest were marked completed as soon as paid >= principal (e.g. after payment 8 of 12); double-tap could record a payment twice (now row-locked); bot accepted rates > 100% and terms > 600 months (now re-prompts)._
+- ✅ **2.14** Export use case (`app/application/use_cases/export`) wrapping the exporters. Remove the `container._tx_repo` access. Router streams CSV/XLSX. _Done: `ExportTransactionsUseCase` wraps both exporters for any month; bot handler switched to it too._
+- ✅ **2.15** Router-level tests (httpx `AsyncClient` + test DB or overridden container): auth required, cross-user isolation, error mapping. _Done for every router 2.5–2.14, plus uniform `{code,message,details}` error bodies; verified end-to-end on real Postgres._
+- ✅ **2.16** Rate limiting (per user) and request logging (structlog, already a dependency). _Done: in-process sliding-window limiter (`rate_limit_requests`/`rate_limit_window_seconds`, default 60/60s), keyed by user id from the token, falling back to client IP for unauthenticated requests (so `/auth/telegram` and bad tokens cannot dodge it). `/health` is exempt. Every request is logged via structlog with method, path, status, duration and user id, including 429s. Single-process only — a multi-instance deployment needs a shared store (Redis) instead._
 
 ### Phase 3. Frontend
 - ☐ **3.1** Scaffold `webapp/` (Vite, React, TS, ESLint, Prettier, Vitest), Telegram SDK init, theme mapping, router, TanStack Query, i18n scaffold.
@@ -195,6 +195,19 @@ Bot webhook mode instead of polling · scheduler moved to a separate worker or D
   - Optional `audit_log` writes for edit/delete (the model already exists).
 - Money stays `Numeric(15,2)` UZS. The API never uses floats.
 - Editing or deleting a transaction must adjust `users.*_balance` atomically. Add a reconciliation script (recompute balances from transactions) as a safety net.
+
+### Open decisions (found during 2.x)
+- ~~Report windows were UTC-only~~ **Resolved:** `GET /analytics/report` now computes "today"/"this week"/"this month"/"this year" in the user's saved timezone (`GetReportUseCase.execute(..., timezone=...)`, backed by `PATCH /me`); defaults to UTC until a user sets one. Verified end-to-end on real Postgres (a day boundary visibly shifts after `PATCH /me`).
+- **Budget windows are still rolling** (last 1/7/30 days from *now*, in UTC), not calendar periods, and not timezone-aware. Lower priority than the report boundary since it affects only which side of a day-old transaction a budget counts, not a whole 5-hour bucket.
+- **Naive datetimes** sent by clients are interpreted as UTC.
+- **Savings goals** cannot be deleted or cancelled via the API yet (needs a rule for returning funds).
+- ~~Category ownership was only checked on the API path~~ **Resolved:** `AddExpenseUseCase`/`AddIncomeUseCase` now take an optional `category_repo` and reject a foreign `category_id` with 404; `Container` always supplies it, so both the bot and the API get the check. (The parameter is optional only so existing tests/call sites that don't care about it don't have to pass one.)
+- **Bot handlers still convert USD and evaluate budget alerts themselves** rather than calling `PrepareTransactionUseCase`/the shared budget use cases — the two paths can drift. Tracked for the Phase 5 cutover, when the bot's own transaction entry is being retired anyway.
+
+- **Recording a reminder payment does not create an expense** (parity with the bot), so paying a credit in the app does not change the balance. Decide whether it should (optional `record_expense` flag?).
+- **Existing data:** credit reminders that the old logic marked `completed` early stay completed. A one-off SQL fix could reopen credits where `months_paid < months_total`.
+- **Existing reminders whose `payment_day` differs from their next date** will snap to `payment_day` at their next recorded payment.
+- **No way yet to create a reminder for a loan already partly paid** (`months_paid` starts at 0), nor to edit or disable (`reminder_enabled`) a reminder.
 
 ## 6. Risks
 

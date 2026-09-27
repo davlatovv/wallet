@@ -17,9 +17,6 @@ PERIOD_LABELS = {
 
 def _format_balance(balance_result) -> str:
     sign = "+" if balance_result.balance >= 0 else ""
-    cash_balance = balance_result.balance_by_currency.get("CASH", 0)
-    currency_balance = balance_result.balance_by_currency.get("USD", 0)
-    card_balance = balance_result.balance - cash_balance - currency_balance
     lines = [
         "💰 <b>Актуальный баланс</b>\n",
         f"📥 Всего доходов:  <b>{balance_result.total_income:,.2f} UZS</b>",
@@ -31,9 +28,9 @@ def _format_balance(balance_result) -> str:
     lines.extend(
         [
             "",
-            f"💵 Наличные: <b>{cash_balance:,.2f} UZS</b>",
-            f"💱 Валюта:   <b>{currency_balance:,.2f} UZS</b>",
-            f"💳 Карта:    <b>{card_balance:,.2f} UZS</b>",
+            f"💵 Наличные: <b>{balance_result.cash_balance:,.2f} UZS</b>",
+            f"💱 Валюта:   <b>{balance_result.currency_balance:,.2f} UZS</b>",
+            f"💳 Карта:    <b>{balance_result.card_balance:,.2f} UZS</b>",
         ]
     )
     lines.append("\n<i>Выберите период для детального отчёта:</i>")

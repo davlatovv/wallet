@@ -30,3 +30,7 @@ class BudgetExceededError(BusinessRuleViolation):
 
 class InsufficientFundsError(BusinessRuleViolation):
     """Not enough balance for operation."""
+
+
+class ExternalServiceError(DomainException):
+    """An upstream service (e.g. the CBU rate API) is unavailable."""

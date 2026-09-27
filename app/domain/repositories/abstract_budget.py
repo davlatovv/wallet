@@ -26,5 +26,11 @@ class AbstractBudgetRepository(ABC):
         ...
 
     @abstractmethod
+    async def update_limit(
+        self, budget_id: int, user_id: int, limit_amount: Decimal
+    ) -> BudgetEntity | None:
+        ...
+
+    @abstractmethod
     async def delete(self, budget_id: int, user_id: int) -> bool:
         ...

@@ -54,17 +54,18 @@ class SQLAlchemySavingsRepository(AbstractSavingsRepository):
         return [_to_entity(r) for r in rows]
 
     async def add_funds(self, goal_id: int, user_id: int, amount: Decimal) -> SavingsGoalEntity | None:
-        goal = await self.get_by_id(goal_id, user_id)
-        if not goal:
-            return None
-        new_amount = goal.current_amount + amount
-        new_status = SavingsStatus.COMPLETED.value if new_amount >= goal.target_amount else goal.status.value
-        await self._session.execute(
+        # Atomic increment: concurrent deposits must not overwrite each other.
+        result = await self._session.execute(
             update(SavingsGoal)
             .where(SavingsGoal.id == goal_id, SavingsGoal.user_id == user_id)
-            .values(current_amount=new_amount, status=new_status)
+            .values(current_amount=SavingsGoal.current_amount + amount)
         )
-        return await self.get_by_id(goal_id, user_id)
+        if result.rowcount == 0:
+            return None
+        goal = await self.get_by_id(goal_id, user_id)
+        if goal and goal.status == SavingsStatus.ACTIVE and goal.is_completed:
+            return await self.mark_completed(goal_id, user_id)
+        return goal
 
     async def mark_completed(self, goal_id: int, user_id: int) -> SavingsGoalEntity | None:
         await self._session.execute(

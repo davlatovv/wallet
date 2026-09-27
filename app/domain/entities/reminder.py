@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import calendar
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -19,6 +20,13 @@ class PaymentType(str, Enum):
 class ReminderStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
+
+
+def next_payment_date(current: date, payment_day: int) -> date:
+    """The payment date one month after `current`, on `payment_day` (1-31) clamped to
+    the month's length. Anchoring on the day avoids drift: 31 Jan -> 28 Feb -> 31 Mar."""
+    year, month = (current.year + 1, 1) if current.month == 12 else (current.year, current.month + 1)
+    return date(year, month, min(payment_day, calendar.monthrange(year, month)[1]))
 
 
 @dataclass
