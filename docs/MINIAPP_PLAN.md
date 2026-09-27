@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **draft for review** · Owner: davlatovv · Date: 2026-09-20
+Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 open questions resolved 2026-09-27 · Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -126,12 +126,12 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ☐ **0.1** Finish and commit the in-progress multi-currency / account-balance work (`0006_add_user_account_balances.py`, transaction and user changes). Run `alembic upgrade head` on a scratch DB. DoD: clean `git status`.
 - ✅ **0.2** Create `tests/` with pytest, pytest-asyncio and pytest-mock config. Add tests for `Money`, `AddTransactionDTO`, `AddExpenseUseCase`, `AddIncomeUseCase` and `GetBalanceUseCase` (fake repos). DoD: `pytest` green in CI.
 - ☐ **0.3** Add a `test` job to `.github/workflows/deploy.yml` (currently lint is only `py_compile`).
-- ☐ **0.4** Decide the domain name and point DNS at the VPS. Create a bot in BotFather, and later set the Mini App URL and menu button. DoD: `https://<domain>` reachable.
+- ☐ **0.4** No domain yet (decided 2026-09-27): for local dev and review, run the `api`/`web` containers and expose them via a tunnel (ngrok or `cloudflared tunnel`), which gives an HTTPS URL Telegram will accept for a WebApp button — a Mini App requires HTTPS even in dev. Register that tunnel URL in BotFather (`/newapp` or `/mybots` → Bot Settings → Menu Button) so it can be opened from the bot for testing. Buying a domain and pointing DNS at the VPS moves to Phase 4 (4.3/4.4), right before the real deployment. DoD: a tunnel URL opens the (currently empty) `web` container over HTTPS from inside Telegram.
 
 ### Phase 1. Design and contract (no production code)
-- ☐ **1.1** Review and approve this document (architecture, endpoint list).
+- ✅ **1.1** Reviewed; open questions resolved 2026-09-27 (see section 8).
 - ☐ **1.2** Wireframes for all screens plus a navigation map (see 3.5). Approve.
-- ☐ **1.3** Design tokens: colors mapped from Telegram theme params, spacing, typography, component list (Button, Card, Sheet, Input, MoneyInput, CategoryChip, ProgressBar, ListItem, EmptyState).
+- ☐ **1.3** Design tokens (decided 2026-09-27: Telegram-native, no separate brand/Figma source). Map CSS variables directly to `Telegram.WebApp.themeParams` (`bg_color`, `text_color`, `hint_color`, `link_color`, `button_color`, `button_text_color`, `secondary_bg_color`, `destructive_text_color`), with a light/dark fallback for the rare case a client reports no theme. Spacing/typography follow Telegram's own iOS/Android type scale rather than a custom system. Component list: Button, Card, Sheet, Input, MoneyInput, CategoryChip, ProgressBar, ListItem, EmptyState.
 - ☐ **1.4** Write the OpenAPI contract draft (schemas for money, pagination, errors) and review it against the screens. Every screen must map to endpoints.
 
 ### Phase 2. Backend: API layer
@@ -153,7 +153,7 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ✅ **2.16** Rate limiting (per user) and request logging (structlog, already a dependency). _Done: in-process sliding-window limiter (`rate_limit_requests`/`rate_limit_window_seconds`, default 60/60s), keyed by user id from the token, falling back to client IP for unauthenticated requests (so `/auth/telegram` and bad tokens cannot dodge it). `/health` is exempt. Every request is logged via structlog with method, path, status, duration and user id, including 429s. Single-process only — a multi-instance deployment needs a shared store (Redis) instead._
 
 ### Phase 3. Frontend
-- ☐ **3.1** Scaffold `webapp/` (Vite, React, TS, ESLint, Prettier, Vitest), Telegram SDK init, theme mapping, router, TanStack Query, i18n scaffold.
+- ☐ **3.1** Scaffold `webapp/` (Vite, React, TS, ESLint, Prettier, Vitest), Telegram SDK init, theme mapping, router, TanStack Query. i18n scaffold structured for multiple locales (so Uzbek/English can be added later per the backlog) but filled with Russian strings only for v1.
 - ☐ **3.2** Generated API client from OpenAPI plus an auth layer (login on start, silent refresh, 401 retry). Local dev mock: Telegram environment mock for a browser (`mockTelegramEnv`).
 - ☐ **3.3** Shared UI kit (components from 1.3) and app shell with the tab bar.
 - ☐ **3.4** Home screen.
@@ -174,7 +174,7 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ☐ **4.2** Reminder notifications get an inline "Open" WebApp button that deep-links to the reminder (`startapp` param).
 - ☐ **4.3** Docker: `api` service, `web` (nginx serving the Vite build, multi-stage Dockerfile), `caddy` service with `deploy/Caddyfile` (`/api/*` → api, else → web). Bot container no longer runs migrations. Add healthchecks.
 - ☐ **4.4** Update GitHub Actions deploy: build the web bundle, `docker compose up -d --build`. New secrets: `JWT_SECRET` etc. go in the VPS `.env` (already preserved by the workflow). Add a post-deploy smoke test against `/health`.
-- ☐ **4.5** Staging: create a second bot token and run the whole stack there first.
+- ☐ **4.5** Staging (downgraded to optional 2026-09-27: no production users yet). Skippable for solo testing; revisit once anyone besides the owner depends on the bot — create a second bot token and run the whole stack there first before touching the real one.
 - ☐ **4.6** Update `CLAUDE.md` / `AGENTS.md` (structure, run commands, new layers) once merged.
 
 ### Phase 5. Cutover
@@ -224,9 +224,9 @@ Bot webhook mode instead of polling · scheduler moved to a separate worker or D
 
 Phase 0 (1–2 d) → Phase 1 (2–3 d) → Phase 2 (5–7 d) ‖ Phase 3 (7–10 d, starts after 2.5 with mocks) → Phase 4 (2 d) → Phase 5 (1–2 wk soak). The critical path is the contract (1.4) → the generated client (3.2).
 
-## 8. Open questions
+## 8. Open questions — resolved 2026-09-27
 
-1. Domain name for the Mini App (needed for 0.4 and BotFather)?
-2. Do you have a Figma file / brand preferences, or should the wireframes follow Telegram-native styling?
-3. Languages for v1: Russian only, or Russian + Uzbek?
-4. Is the current bot data used by other people today (production users), which would make the staging bot (4.5) mandatory?
+1. **Domain:** none yet. Development and review use a tunnel (ngrok or Cloudflare Tunnel) pointed at the local `api`/`web` containers; a real domain is bought/pointed at the VPS only when Phase 4 (deployment) starts. Task 0.4 updated below.
+2. **Design:** Telegram-native styling — map colors from `Telegram.WebApp.themeParams` (light/dark, accent, button colors) directly, no separate brand palette. Task 1.3 updated below.
+3. **Languages:** Russian only for v1, matching the current bot's text exactly. Uzbek/English stay in the Phase 6 backlog.
+4. **Production users:** none — this is just the owner testing. The staging-bot task (4.5) is downgraded from mandatory to optional; the Mini App can be built and tested directly against the existing bot token until real users are on it.
