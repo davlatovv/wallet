@@ -37,10 +37,18 @@ class AbstractReminderRepository(ABC):
         ...
 
     @abstractmethod
-    async def record_payment(self, reminder_id: int, user_id: int, amount: Decimal) -> ReminderEntity | None:
+    async def record_payment(
+        self,
+        reminder_id: int,
+        user_id: int,
+        amount: Decimal,
+        next_payment_amount: Decimal | None = None,
+    ) -> ReminderEntity | None:
         """
-        Add amount to paid_amount, increment months_paid,
-        advance next_payment_date by 1 month, mark completed if done.
+        Add amount to paid_amount, increment months_paid, advance next_payment_date by
+        one month (anchored on payment_day), mark completed if done. If given,
+        `next_payment_amount` replaces payment_amount (differential credits).
+        Returns None if the reminder is missing or already completed.
         """
         ...
 

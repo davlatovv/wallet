@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
 from app.application.dto.reminder import (
+    MAX_MONTHS,
     CreateCreditReminderDTO,
     CreateInstallmentReminderDTO,
     CreateEducationReminderDTO,
@@ -315,9 +316,9 @@ async def credit_total_entered(message: Message, state: FSMContext) -> None:
 async def credit_rate_entered(message: Message, state: FSMContext) -> None:
     try:
         v = Decimal(message.text.strip().replace(",", "."))
-        assert v >= 0
+        assert 0 <= v <= 100
     except Exception:
-        await message.answer("Неверное значение. Введите процент (например: 18.5):")
+        await message.answer("Неверное значение. Введите процент от 0 до 100 (например: 18.5):")
         return
     await state.update_data(rate=str(v))
     await state.set_state(ReminderStates.credit_months)
@@ -328,9 +329,9 @@ async def credit_rate_entered(message: Message, state: FSMContext) -> None:
 async def credit_months_entered(message: Message, state: FSMContext) -> None:
     try:
         v = int(message.text.strip())
-        assert v >= 1
+        assert 1 <= v <= MAX_MONTHS
     except Exception:
-        await message.answer("Введите целое число >= 1:")
+        await message.answer(f"Введите целое число от 1 до {MAX_MONTHS}:")
         return
     await state.update_data(months=v)
     await state.set_state(ReminderStates.credit_payment_type)
@@ -378,9 +379,9 @@ async def inst_monthly_entered(message: Message, state: FSMContext) -> None:
 async def inst_months_entered(message: Message, state: FSMContext) -> None:
     try:
         v = int(message.text.strip())
-        assert v >= 1
+        assert 1 <= v <= MAX_MONTHS
     except Exception:
-        await message.answer("Введите целое число >= 1:")
+        await message.answer(f"Введите целое число от 1 до {MAX_MONTHS}:")
         return
     await state.update_data(months=v)
     await state.set_state(ReminderStates.waiting_for_payment_day)

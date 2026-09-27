@@ -6,6 +6,9 @@ from pydantic import BaseModel, field_validator
 from app.domain.entities.reminder import ReminderType, PaymentType, ReminderStatus
 
 
+MAX_MONTHS = 600
+
+
 class CreateCreditReminderDTO(BaseModel):
     name: str
     total_amount: Decimal
@@ -15,18 +18,25 @@ class CreateCreditReminderDTO(BaseModel):
     payment_day: int            # день месяца
     first_payment_date: date
 
-    @field_validator("total_amount", "interest_rate")
+    @field_validator("total_amount")
     @classmethod
-    def must_be_positive(cls, v: Decimal) -> Decimal:
-        if v < Decimal("0"):
-            raise ValueError("Must be >= 0")
+    def total_must_be_positive(cls, v: Decimal) -> Decimal:
+        if v <= Decimal("0"):
+            raise ValueError("Must be > 0")
+        return v
+
+    @field_validator("interest_rate")
+    @classmethod
+    def rate_in_range(cls, v: Decimal) -> Decimal:
+        if not Decimal("0") <= v <= Decimal("100"):
+            raise ValueError("interest_rate must be 0-100")
         return v
 
     @field_validator("months_total")
     @classmethod
     def months_must_be_valid(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("months_total must be >= 1")
+        if not 1 <= v <= MAX_MONTHS:
+            raise ValueError(f"months_total must be 1-{MAX_MONTHS}")
         return v
 
     @field_validator("payment_day")
