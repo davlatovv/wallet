@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 open questions resolved 2026-09-27 · Owner: davlatovv · Date: 2026-09-20
+Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 open questions resolved and [wireframes drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY) 2026-09-27, awaiting approval · Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -130,7 +130,7 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 
 ### Phase 1. Design and contract (no production code)
 - ✅ **1.1** Reviewed; open questions resolved 2026-09-27 (see section 8).
-- ☐ **1.2** Wireframes for all screens plus a navigation map (see 3.5). Approve.
+- ✅ **1.2** Wireframes for all screens plus a navigation map (see 3.5). [Draft published](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY) 2026-09-27 — Telegram-native light theme, phone-width (390×844) artboards: Home, Add-transaction sheet, Transactions, Analytics, More, Categories, Budgets, Debts, Savings, and the Reminders flow (type picker → credit detail with schedule and payment), plus a navigation-map artboard showing how they connect. Awaiting approval; not yet reviewed on a real device.
 - ☐ **1.3** Design tokens (decided 2026-09-27: Telegram-native, no separate brand/Figma source). Map CSS variables directly to `Telegram.WebApp.themeParams` (`bg_color`, `text_color`, `hint_color`, `link_color`, `button_color`, `button_text_color`, `secondary_bg_color`, `destructive_text_color`), with a light/dark fallback for the rare case a client reports no theme. Spacing/typography follow Telegram's own iOS/Android type scale rather than a custom system. Component list: Button, Card, Sheet, Input, MoneyInput, CategoryChip, ProgressBar, ListItem, EmptyState.
 - ☐ **1.4** Write the OpenAPI contract draft (schemas for money, pagination, errors) and review it against the screens. Every screen must map to endpoints.
 
