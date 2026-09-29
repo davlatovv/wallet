@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 open questions resolved and [wireframes drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY) 2026-09-27, awaiting approval · Owner: davlatovv · Date: 2026-09-20
+Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend started** on `feat/miniapp-web` (branched from the API branch) — ten screens wired to the real backend, verified in-browser end to end; reminder-creation forms (3.12), edit/delete UI, and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -153,21 +153,21 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ✅ **2.16** Rate limiting (per user) and request logging (structlog, already a dependency). _Done: in-process sliding-window limiter (`rate_limit_requests`/`rate_limit_window_seconds`, default 60/60s), keyed by user id from the token, falling back to client IP for unauthenticated requests (so `/auth/telegram` and bad tokens cannot dodge it). `/health` is exempt. Every request is logged via structlog with method, path, status, duration and user id, including 429s. Single-process only — a multi-instance deployment needs a shared store (Redis) instead._
 
 ### Phase 3. Frontend
-- ☐ **3.1** Scaffold `webapp/` (Vite, React, TS, ESLint, Prettier, Vitest), Telegram SDK init, theme mapping, router, TanStack Query. i18n scaffold structured for multiple locales (so Uzbek/English can be added later per the backlog) but filled with Russian strings only for v1.
-- ☐ **3.2** Generated API client from OpenAPI plus an auth layer (login on start, silent refresh, 401 retry). Local dev mock: Telegram environment mock for a browser (`mockTelegramEnv`).
-- ☐ **3.3** Shared UI kit (components from 1.3) and app shell with the tab bar.
-- ☐ **3.4** Home screen.
-- ☐ **3.5** Add-transaction sheet (expense and income, currency handling, category chips).
-- ☐ **3.6** Transactions list (filters, edit, delete).
-- ☐ **3.7** Analytics.
-- ☐ **3.8** Categories.
-- ☐ **3.9** Budgets.
-- ☐ **3.10** Debts.
-- ☐ **3.11** Savings.
-- ☐ **3.12** Reminders (biggest: type picker, four forms, credit preview, payment).
-- ☐ **3.13** Export and Settings.
-- ☐ **3.14** Polish: empty and error states, skeletons, haptics, safe-area, accessibility pass, bundle-size check (target under 250 KB gzip initial).
-- ☐ **3.15** Frontend tests: key flows (add expense, edit tx, create reminder) with MSW.
+- ✅ **3.1** Scaffold `webapp/` (Vite, React, TS, router, TanStack Query), Telegram SDK init, theme mapping. _Done, with two substitutions: `oxlint` instead of ESLint/Prettier (this Vite version's own default; equivalent purpose), and no Vitest yet (bundled into 3.15, still open). i18n scaffold (`shared/i18n`) is structured for multiple locales, filled with Russian only._
+- ✅ **3.2** Generated API client from OpenAPI (`openapi-fetch` + `openapi-typescript`, `npm run generate:api`) plus an auth layer (login from Telegram `initData`, in-memory token, retry-once-on-401). _Local dev mock done (`shared/telegram/init.ts`), including a real `mockTelegramEnv` — three genuine SDK bugs were hit and fixed getting it to actually render (see the frontend commit message: missing `signature` field, deprecated async mount methods, missing `TelegramWebviewProxy` transport). No silent token refresh yet — an expired token just re-logs in from `initData` on the next request, which needs no separate refresh flow since Telegram re-supplies fresh `initData` on every open anyway._
+- ✅ **3.3** Shared UI kit (`shared/ui`: Card, Header, ListItem, TabBar, ProgressBar, StatTile, PrimaryButton, EmptyState, ErrorState, SubScreen) and the tab-bar app shell.
+- ✅ **3.4** Home screen. Real balance, this-month totals, recent transactions, quick-add buttons.
+- ◐ **3.5** Add-transaction form (expense and income, currency UZS/USD/CASH, real category chips) — done as a full page rather than a bottom sheet (simpler with React Router; revisit if the sheet feel matters). No live USD→UZS preview shown while typing (the server converts on submit; showing the estimate client-side is a small follow-up).
+- ◐ **3.6** Transactions list — done (real data, newest first); filters/edit/delete UI not built yet (the API supports them, per 2.6/2.7).
+- ✅ **3.7** Analytics. Period switch, totals, category breakdown bars.
+- ◐ **3.8** Categories — list view (expense/income toggle) done; add/rename/delete UI not built.
+- ◐ **3.9** Budgets — progress view done; create/edit UI not built.
+- ◐ **3.10** Debts — list (grouped by direction) done; add/settle UI not built.
+- ◐ **3.11** Savings — progress view done; create/deposit UI not built.
+- ☐ **3.12** Reminders: list and detail (schedule, record-payment mutation) are done and real. The four **creation forms** are not built — `ReminderTypePickerPage` shows the type choice from the wireframe and says so explicitly rather than pretending to work.
+- ◐ **3.13** Export and Settings — export (CSV/XLSX, real download via blob since the endpoint needs an auth header `Telegram.WebApp.downloadFile` can't attach) is done; a timezone/settings UI (backed by `PATCH /me` from 2.5) is not built.
+- ☐ **3.14** Polish: empty and error states exist throughout; skeletons, haptics, safe-area insets, an accessibility pass and the bundle-size check are still open. _Early read: the production build is 136 KB gzip already, well under the 250 KB target, with none of the above yet._
+- ☐ **3.15** Frontend tests (Vitest + MSW) — not started.
 
 ### Phase 4. Bot changes and deployment
 - ☐ **4.1** `/start` sends a WebApp button (`web_app=WebAppInfo(url=...)`). Set the chat menu button via `set_chat_menu_button`.
