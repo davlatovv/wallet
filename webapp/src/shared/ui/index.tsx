@@ -360,3 +360,91 @@ export function SubScreen({ title, children }: { title: string; children: ReactN
     </Screen>
   );
 }
+
+const fieldInputStyle: CSSProperties = {
+  background: 'var(--color-bg)',
+  border: 'none',
+  borderRadius: 'var(--radius-control)',
+  padding: '12px 14px',
+  fontSize: 15,
+  color: 'var(--color-text)',
+  outline: 'none',
+  width: '100%',
+};
+
+/** Label + input, consistent across the reminder-creation forms. */
+export function FormField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 13, color: 'var(--color-hint)', fontWeight: 600 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+export function TextField({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  inputMode,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  inputMode?: 'text' | 'decimal' | 'numeric';
+}) {
+  return (
+    <input
+      type={type}
+      inputMode={inputMode}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      style={fieldInputStyle}
+    />
+  );
+}
+
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', background: 'var(--color-bg-secondary)', borderRadius: 12, padding: 3, gap: 3 }}>
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            padding: '9px 0',
+            borderRadius: 9,
+            fontSize: 13,
+            fontWeight: value === opt.value ? 600 : 400,
+            border: 'none',
+            cursor: 'pointer',
+            background: value === opt.value ? 'var(--color-link)' : 'transparent',
+            color: value === opt.value ? 'var(--color-button-text)' : 'var(--color-text)',
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}

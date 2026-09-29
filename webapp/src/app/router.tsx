@@ -11,6 +11,10 @@ import { SavingsPage } from '../pages/Savings/SavingsPage';
 import { RemindersListPage } from '../pages/Reminders/RemindersListPage';
 import { ReminderTypePickerPage } from '../pages/Reminders/ReminderTypePickerPage';
 import { ReminderDetailPage } from '../pages/Reminders/ReminderDetailPage';
+import { CreateCreditReminderPage } from '../pages/Reminders/CreateCreditReminderPage';
+import { CreateInstallmentReminderPage } from '../pages/Reminders/CreateInstallmentReminderPage';
+import { CreateEducationReminderPage } from '../pages/Reminders/CreateEducationReminderPage';
+import { CreateRegularReminderPage } from '../pages/Reminders/CreateRegularReminderPage';
 import { ExportPage } from '../pages/Export/ExportPage';
 
 /**
@@ -32,6 +36,10 @@ export const router = createBrowserRouter([
   { path: '/savings', element: <SavingsPage /> },
   { path: '/reminders', element: <RemindersListPage /> },
   { path: '/reminders/new', element: <ReminderTypePickerPage /> },
+  { path: '/reminders/new/credit', element: <CreateCreditReminderPage /> },
+  { path: '/reminders/new/installment', element: <CreateInstallmentReminderPage /> },
+  { path: '/reminders/new/education', element: <CreateEducationReminderPage /> },
+  { path: '/reminders/new/regular', element: <CreateRegularReminderPage /> },
   { path: '/reminders/:reminderId', element: <ReminderDetailPage /> },
   { path: '/export', element: <ExportPage /> },
 ]);
