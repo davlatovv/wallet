@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend started** on `feat/miniapp-web` (branched from the API branch) — ten screens wired to the real backend, verified in-browser end to end; reminder-creation forms (3.12), edit/delete UI, and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
+Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend in progress** on `feat/miniapp-web` (branched from the API branch) — all ten screens plus the four reminder-creation forms wired to the real backend, verified in-browser end to end; edit/delete UI for existing records and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -164,7 +164,7 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ◐ **3.9** Budgets — progress view done; create/edit UI not built.
 - ◐ **3.10** Debts — list (grouped by direction) done; add/settle UI not built.
 - ◐ **3.11** Savings — progress view done; create/deposit UI not built.
-- ☐ **3.12** Reminders: list and detail (schedule, record-payment mutation) are done and real. The four **creation forms** are not built — `ReminderTypePickerPage` shows the type choice from the wireframe and says so explicitly rather than pretending to work.
+- ✅ **3.12** Reminders: list, detail (schedule, record-payment mutation) and all four creation forms — credit (with a live schedule preview before saving), installment, education, regular. Verified end-to-end in the browser (credit preview numbers matched the earlier backend check exactly; both credit and regular forms created real reminders visible in the list).
 - ◐ **3.13** Export and Settings — export (CSV/XLSX, real download via blob since the endpoint needs an auth header `Telegram.WebApp.downloadFile` can't attach) is done; a timezone/settings UI (backed by `PATCH /me` from 2.5) is not built.
 - ☐ **3.14** Polish: empty and error states exist throughout; skeletons, haptics, safe-area insets, an accessibility pass and the bundle-size check are still open. _Early read: the production build is 136 KB gzip already, well under the 250 KB target, with none of the above yet._
 - ☐ **3.15** Frontend tests (Vitest + MSW) — not started.
