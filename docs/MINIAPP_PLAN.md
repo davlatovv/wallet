@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend in progress** on `feat/miniapp-web` (branched from the API branch) — all ten screens plus the four reminder-creation forms wired to the real backend, verified in-browser end to end; edit/delete UI for existing records and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
+Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend in progress** on `feat/miniapp-web` (branched from the API branch) — all ten screens, the four reminder-creation forms, and edit/delete/create UI for transactions/categories/budgets/debts/savings all wired to the real backend and verified in-browser end to end; a timezone-settings screen, polish (3.14) and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -158,12 +158,12 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ✅ **3.3** Shared UI kit (`shared/ui`: Card, Header, ListItem, TabBar, ProgressBar, StatTile, PrimaryButton, EmptyState, ErrorState, SubScreen) and the tab-bar app shell.
 - ✅ **3.4** Home screen. Real balance, this-month totals, recent transactions, quick-add buttons.
 - ◐ **3.5** Add-transaction form (expense and income, currency UZS/USD/CASH, real category chips) — done as a full page rather than a bottom sheet (simpler with React Router; revisit if the sheet feel matters). No live USD→UZS preview shown while typing (the server converts on submit; showing the estimate client-side is a small follow-up).
-- ◐ **3.6** Transactions list — done (real data, newest first); filters/edit/delete UI not built yet (the API supports them, per 2.6/2.7).
+- ✅ **3.6** Transactions — list plus edit (amount/currency/note) and delete. Savings-type transactions show a note instead of a form (read-only here, same rule as the backend). No filter UI yet (type/category/date — the API supports it).
 - ✅ **3.7** Analytics. Period switch, totals, category breakdown bars.
-- ◐ **3.8** Categories — list view (expense/income toggle) done; add/rename/delete UI not built.
-- ◐ **3.9** Budgets — progress view done; create/edit UI not built.
-- ◐ **3.10** Debts — list (grouped by direction) done; add/settle UI not built.
-- ◐ **3.11** Savings — progress view done; create/deposit UI not built.
+- ✅ **3.8** Categories — list, create, rename, delete. System categories stay non-clickable, matching backend protection.
+- ✅ **3.9** Budgets — progress view plus one form for create and edit (`PUT /budgets` upserts by category+period, so editing pre-fills via router state and re-submits), and delete.
+- ✅ **3.10** Debts — list, create, settle, delete.
+- ◐ **3.11** Savings — list, create, deposit. No delete UI — there's no `DELETE /savings/{id}` on the backend yet (noted in Phase 2's open decisions).
 - ✅ **3.12** Reminders: list, detail (schedule, record-payment mutation) and all four creation forms — credit (with a live schedule preview before saving), installment, education, regular. Verified end-to-end in the browser (credit preview numbers matched the earlier backend check exactly; both credit and regular forms created real reminders visible in the list).
 - ◐ **3.13** Export and Settings — export (CSV/XLSX, real download via blob since the endpoint needs an auth header `Telegram.WebApp.downloadFile` can't attach) is done; a timezone/settings UI (backed by `PATCH /me` from 2.5) is not built.
 - ☐ **3.14** Polish: empty and error states exist throughout; skeletons, haptics, safe-area insets, an accessibility pass and the bundle-size check are still open. _Early read: the production build is 136 KB gzip already, well under the 250 KB target, with none of the above yet._
