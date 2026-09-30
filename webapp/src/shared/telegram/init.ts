@@ -70,6 +70,17 @@ function devMockLaunchParams(): void {
 let initialized = false;
 
 /**
+ * True once initTelegram() has installed the no-op transport shim below —
+ * i.e. there is no real Telegram client on the other end of any postEvent
+ * call. Exported so callers that need an actual response (e.g. a popup)
+ * can tell a genuinely-unsupported feature apart from one that would hang
+ * forever waiting on a reply nothing will ever send — see
+ * shared/telegram/confirmDialog.ts, which hit exactly that hang testing
+ * the native popup here.
+ */
+export let usingMockTransport = false;
+
+/**
  * Boots the Telegram SDK once per app lifetime: mocks the environment when
  * running outside Telegram (local dev in a plain browser), then mounts the
  * mini-app, theme and back-button scopes and binds their state to CSS
@@ -108,6 +119,7 @@ export function initTelegram(): void {
     !!(window.external as { notify?: unknown } | null)?.notify;
   if (!hasRealTransport) {
     window.TelegramWebviewProxy = { postEvent: () => {} };
+    usingMockTransport = true;
   }
 
   init();

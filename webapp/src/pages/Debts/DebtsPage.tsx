@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../shared/api/client';
 import { t } from '../../shared/i18n';
-import { Card, EmptyState, ErrorState, ListItem, SubScreen } from '../../shared/ui';
+import { Card, EmptyState, ErrorState, ListItem, PrimaryButton, SubScreen } from '../../shared/ui';
 import { formatMoney } from '../../shared/ui/formatMoney';
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
@@ -35,6 +35,7 @@ export function DebtsPage() {
             return (
               <ListItem
                 key={debt.id}
+                href={`/debts/${debt.id}`}
                 border={i < items.length - 1}
                 left={
                   <div>
@@ -64,6 +65,10 @@ export function DebtsPage() {
       {query.data && query.data.length === 0 && <EmptyState title="Нет долгов" />}
       {renderGroup('Мне должны', owedToMe)}
       {renderGroup('Я должен', iOwe)}
+
+      <PrimaryButton variant="outline" href="/debts/new">
+        + Добавить долг
+      </PrimaryButton>
     </SubScreen>
   );
 }

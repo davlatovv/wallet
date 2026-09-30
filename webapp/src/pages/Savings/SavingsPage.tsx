@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../shared/api/client';
 import { t } from '../../shared/i18n';
-import { Card, EmptyState, ErrorState, ProgressBar, SubScreen } from '../../shared/ui';
+import { Card, EmptyState, ErrorState, PrimaryButton, ProgressBar, SubScreen } from '../../shared/ui';
 import { formatMoney } from '../../shared/ui/formatMoney';
 
 export function SavingsPage() {
@@ -61,8 +61,15 @@ export function SavingsPage() {
             <div>{formatMoney(goal.current_amount)}</div>
             <div>из {formatMoney(goal.target_amount)}</div>
           </div>
+          {goal.status === 'active' && (
+            <PrimaryButton href={`/savings/${goal.id}/deposit`}>Пополнить</PrimaryButton>
+          )}
         </Card>
       ))}
+
+      <PrimaryButton variant="outline" href="/savings/new">
+        + Новая цель
+      </PrimaryButton>
     </SubScreen>
   );
 }

@@ -2,7 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiClient } from '../../shared/api/client';
 import { t } from '../../shared/i18n';
-import { Card, EmptyState, ErrorState, IconAvatar, ListItem, SubScreen } from '../../shared/ui';
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  IconAvatar,
+  ListItem,
+  PrimaryButton,
+  SubScreen,
+} from '../../shared/ui';
 
 type CategoryType = 'expense' | 'income';
 
@@ -54,6 +62,7 @@ export function CategoriesPage() {
           {query.data.map((cat, i) => (
             <ListItem
               key={cat.id}
+              href={cat.is_system ? undefined : `/categories/${cat.id}`}
               border={i < query.data.length - 1}
               left={
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -63,11 +72,17 @@ export function CategoriesPage() {
                   </div>
                 </div>
               }
-              right={<span style={{ color: 'var(--color-hint)', fontSize: 17 }}>›</span>}
+              right={
+                cat.is_system ? null : <span style={{ color: 'var(--color-hint)', fontSize: 17 }}>›</span>
+              }
             />
           ))}
         </Card>
       )}
+
+      <PrimaryButton variant="outline" href={`/categories/new?type=${type}`}>
+        + Добавить категорию
+      </PrimaryButton>
     </SubScreen>
   );
 }

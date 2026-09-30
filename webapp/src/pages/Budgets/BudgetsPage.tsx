@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../shared/api/client';
 import { t } from '../../shared/i18n';
-import { Card, EmptyState, ErrorState, IconAvatar, ProgressBar, SubScreen } from '../../shared/ui';
+import { Card, EmptyState, ErrorState, IconAvatar, PrimaryButton, ProgressBar, SubScreen } from '../../shared/ui';
 import { formatMoney } from '../../shared/ui/formatMoney';
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -11,6 +12,7 @@ const PERIOD_LABELS: Record<string, string> = {
 };
 
 export function BudgetsPage() {
+  const navigate = useNavigate();
   const query = useQuery({
     queryKey: ['budgets'],
     queryFn: async () => {
@@ -34,7 +36,13 @@ export function BudgetsPage() {
             ? 'var(--color-warning)'
             : 'var(--color-income)';
         return (
-          <Card key={budget.id}>
+          <button
+            key={budget.id}
+            type="button"
+            onClick={() => navigate('/budgets/new', { state: budget })}
+            style={{ all: 'unset', display: 'block', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
+          >
+          <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <IconAvatar>🎯</IconAvatar>
@@ -65,8 +73,13 @@ export function BudgetsPage() {
               <div>из {formatMoney(budget.limit_amount)}</div>
             </div>
           </Card>
+          </button>
         );
       })}
+
+      <PrimaryButton variant="outline" onClick={() => navigate('/budgets/new')}>
+        + Новый бюджет
+      </PrimaryButton>
     </SubScreen>
   );
 }

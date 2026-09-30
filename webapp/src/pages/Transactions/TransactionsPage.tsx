@@ -49,6 +49,7 @@ export function TransactionsPage() {
             {query.data.items.map((tx, i) => (
               <ListItem
                 key={tx.id}
+                href={`/transactions/${tx.id}`}
                 border={i < query.data.items.length - 1}
                 left={
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>

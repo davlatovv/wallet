@@ -111,6 +111,7 @@ export function HomePage() {
             {recent.data.items.map((tx, i) => (
               <ListItem
                 key={tx.id}
+                href={`/transactions/${tx.id}`}
                 border={i < recent.data.items.length - 1}
                 left={
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>

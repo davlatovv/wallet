@@ -218,8 +218,9 @@ export function PrimaryButton({
   children: ReactNode;
   onClick?: () => void;
   href?: string;
-  variant?: 'filled' | 'outline';
+  variant?: 'filled' | 'outline' | 'danger';
 }) {
+  const accent = variant === 'danger' ? 'var(--color-destructive)' : 'var(--color-link)';
   const style: CSSProperties = {
     display: 'block',
     textAlign: 'center',
@@ -229,9 +230,9 @@ export function PrimaryButton({
     fontWeight: 600,
     textDecoration: 'none',
     cursor: 'pointer',
-    border: variant === 'outline' ? '1px dashed var(--color-link)' : 'none',
+    border: variant === 'outline' ? `1px dashed ${accent}` : 'none',
     background: variant === 'filled' ? 'var(--color-button)' : 'transparent',
-    color: variant === 'filled' ? 'var(--color-button-text)' : 'var(--color-link)',
+    color: variant === 'filled' ? 'var(--color-button-text)' : accent,
     width: '100%',
   };
   if (href) {
