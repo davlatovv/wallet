@@ -5,7 +5,6 @@ import structlog
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.config.settings import settings
 from app.infrastructure.db.session.factory import async_session_factory, create_engine
@@ -49,7 +48,9 @@ async def main() -> None:
         token=settings.bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    dp = Dispatcher(storage=MemoryStorage())
+    # No FSM storage needed: the bot no longer has chat-based dialogs (see
+    # docs/MINIAPP_PLAN.md Phase 5 — everything moved to the Mini App).
+    dp = Dispatcher()
 
     dp.update.middleware(DbSessionMiddleware(session_factory))
     dp.update.middleware(RegisterUserMiddleware())

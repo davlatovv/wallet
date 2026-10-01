@@ -7,6 +7,7 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.infrastructure.db.repositories.reminder import SQLAlchemyReminderRepository
+from app.presentation.telegram.keyboards.webapp import open_app_keyboard
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,11 @@ async def send_payment_reminders(bot: Bot, session_factory: async_sessionmaker) 
             f"📅 Дата платежа: сегодня ({today.strftime('%d.%m.%Y')})"
         )
         try:
-            await bot.send_message(reminder.user_id, text, parse_mode="HTML")
+            # Deep-links straight to this reminder's screen in the Mini App
+            # (the webapp router already has a /reminders/{id} route for
+            # it); None (no WEBAPP_URL configured) just sends plain text.
+            keyboard = open_app_keyboard(f"/reminders/{reminder.id}", text="Открыть")
+            await bot.send_message(reminder.user_id, text, parse_mode="HTML", reply_markup=keyboard)
             logger.info(
                 "Payment reminder sent: user=%d reminder=%d name=%s",
                 reminder.user_id, reminder.id, reminder.name,
@@ -51,14 +56,6 @@ async def send_payment_reminders(bot: Bot, session_factory: async_sessionmaker) 
             logger.warning(
                 "Failed to send reminder to user=%d: %s", reminder.user_id, exc
             )
-
-
-async def daily_generic_reminder(bot: Bot, chat_id: int) -> None:
-    await bot.send_message(
-        chat_id,
-        "💡 <b>Напоминание</b>\n\nНе забудьте внести сегодняшние расходы!",
-        parse_mode="HTML",
-    )
 
 
 def setup_scheduler(bot: Bot, session_factory: async_sessionmaker) -> AsyncIOScheduler:
