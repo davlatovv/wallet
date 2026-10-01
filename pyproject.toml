@@ -2,10 +2,18 @@
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+# Explicit allowlist: setuptools' automatic flat-layout discovery breaks
+# ("multiple top-level packages... setuptools will not proceed") once more
+# than one directory at the repo root looks package-like. `webapp/` (the
+# frontend) and `tests/` (has __init__.py) both qualify, so without this
+# `pip install -e .` fails as soon as either exists alongside `app`/`db`.
+include = ["app*", "db*"]
+
 [project]
 name = "wallet-bot"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "aiogram==3.13.1",
     "sqlalchemy[asyncio]==2.0.36",
