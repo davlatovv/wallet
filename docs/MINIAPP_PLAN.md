@@ -1,6 +1,6 @@
 # Wallet → Telegram Mini App: Migration Plan
 
-Status: **Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2)**; Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval; **Phase 3 frontend in progress** on `feat/miniapp-web` (branched from the API branch) — all ten screens, the four reminder-creation forms, and edit/delete/create UI for transactions/categories/budgets/debts/savings all wired to the real backend and verified in-browser end to end; a timezone-settings screen, polish (3.14) and tests (3.15) still open · Owner: davlatovv · Date: 2026-09-20
+Status: **Bot cut over to Mini App-only** (2026-10-01) — the chat-based flows are gone; `/start` only opens the webapp, and the bot now just does that plus payment-reminder notifications. Phase 2 (backend API) shipped — [PR #2](https://github.com/davlatovv/wallet/pull/2). Phase 1 wireframes [drafted](https://claude.ai/artifact/CKyns45Q1pqGuRXN7qeQpY), awaiting approval. Phase 3 frontend on `feat/miniapp-web`: all ten screens, the four reminder-creation forms, and edit/delete/create UI for transactions/categories/budgets/debts/savings, verified in-browser end to end against the real backend **and** through a public dev tunnel opened from the real Telegram client. Still open: a timezone-settings screen, polish (3.14), frontend tests (3.15), and real deployment (Phase 4.3/4.4 — still running as local processes behind dev tunnels, not Docker). Owner: davlatovv · Date: 2026-09-20
 
 ## 1. Goal and decisions
 
@@ -170,18 +170,18 @@ Legend: ☐ todo. Each task is small enough for one PR. "DoD" is the definition 
 - ☐ **3.15** Frontend tests (Vitest + MSW) — not started.
 
 ### Phase 4. Bot changes and deployment
-- ☐ **4.1** `/start` sends a WebApp button (`web_app=WebAppInfo(url=...)`). Set the chat menu button via `set_chat_menu_button`.
-- ☐ **4.2** Reminder notifications get an inline "Open" WebApp button that deep-links to the reminder (`startapp` param).
-- ☐ **4.3** Docker: `api` service, `web` (nginx serving the Vite build, multi-stage Dockerfile), `caddy` service with `deploy/Caddyfile` (`/api/*` → api, else → web). Bot container no longer runs migrations. Add healthchecks.
-- ☐ **4.4** Update GitHub Actions deploy: build the web bundle, `docker compose up -d --build`. New secrets: `JWT_SECRET` etc. go in the VPS `.env` (already preserved by the workflow). Add a post-deploy smoke test against `/health`.
-- ☐ **4.5** Staging (downgraded to optional 2026-09-27: no production users yet). Skippable for solo testing; revisit once anyone besides the owner depends on the bot — create a second bot token and run the whole stack there first before touching the real one.
-- ☐ **4.6** Update `CLAUDE.md` / `AGENTS.md` (structure, run commands, new layers) once merged.
+- ✅ **4.1** `/start` (and `/app`) sends a `web_app` inline button opening the Mini App (`keyboards/webapp.py`, backed by `WEBAPP_URL`). _Done as an inline button rather than the chat menu button (`set_chat_menu_button`) — simpler, and works immediately without extra BotFather/API setup; the menu button can be added later, they're not mutually exclusive._
+- ✅ **4.2** Reminder notifications carry an "Открыть" button deep-linking straight to `/reminders/{id}` in the webapp. _Via a direct URL (the webapp already routes `/reminders/:id`), not a `startapp` param — simpler for a menu-button-style Mini App and avoids needing a registered short name._
+- ☐ **4.3** Docker: `api` service, `web` (nginx serving the Vite build), `caddy` service. Not done — still running the API and webapp as bare local processes behind dev tunnels (see `docker-compose.override.yml`, local-only).
+- ☐ **4.4** GitHub Actions deploy update (build the web bundle, new VPS secrets, smoke test). Not done — no real domain yet (task 0.4).
+- ☐ **4.5** Staging — still optional, no production users.
+- ✅ **4.6** `CLAUDE.md` / `AGENTS.md` updated: new structure (`presentation/api`, `webapp/`), run commands for the API and frontend, required env vars.
 
 ### Phase 5. Cutover
-- ☐ **5.1** Beta with the owner and a few users while the old bot flows still work (both hit the same DB and use cases).
-- ☐ **5.2** Freeze the bot flows: the main menu is replaced by the "Open app" button. Old reply-keyboard buttons answer "use the app".
-- ☐ **5.3** After one to two stable weeks, delete the FSM handlers, `states/`, unused keyboards and the `MemoryStorage` dispatcher config. Keep only `start.py` and notifications.
-- ☐ **5.4** Retro: check the error rate, latency and any user feedback. Plan v2.
+- ⏭️ **5.1** Beta soak — **skipped at the owner's explicit request** (2026-10-01): no production users yet, so went straight to cutover instead of running both in parallel first.
+- ✅ **5.2** Bot flows frozen: `/start` now only opens the Mini App.
+- ✅ **5.3** Done together with 5.2 rather than after a soak period (see above): deleted every FSM handler (expense, income, analytics, categories, budgets, debts, savings, export, reminders), their keyboards, `states/`, the empty `filters/` package, and the now-unused `MemoryStorage` dispatcher config. Only `start.py` and the reminder scheduler remain. 270 backend tests still pass; the bot container was rebuilt and run for real against the owner's bot token.
+- ☐ **5.4** Retro — premature until there's been real usage to look back on.
 
 ### Phase 6. Later (backlog)
 Bot webhook mode instead of polling · scheduler moved to a separate worker or DB-backed jobstore · Uzbek/English i18n · recurring transactions · receipts / photo attach · charts over time · PWA/offline queue · shared budgets.
