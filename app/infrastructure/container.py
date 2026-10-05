@@ -6,24 +6,28 @@ Usage in handlers:
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.application.use_cases.analytics.get_report import GetReportUseCase
+from app.application.use_cases.analytics.get_report import GetReportUseCase, ListReportMonthsUseCase
 from app.application.use_cases.budgets.manage_budgets import (
     SetBudgetUseCase,
     ListBudgetsUseCase,
+    GetBudgetProgressUseCase,
     DeleteBudgetUseCase,
 )
 from app.application.use_cases.categories.manage_categories import (
     EnsureUserExistsUseCase,
+    ListAllCategoriesUseCase,
     ListCategoriesUseCase,
     CreateCategoryUseCase,
     DeleteCategoryUseCase,
     RenameCategoryUseCase,
     GetCategoryUseCase,
 )
+from app.application.use_cases.export.export_transactions import ExportTransactionsUseCase
 from app.application.use_cases.debts.manage_debts import (
     AddDebtUseCase,
     SettleDebtUseCase,
     ListDebtsUseCase,
+    DeleteDebtUseCase,
 )
 from app.application.use_cases.reminders.manage_reminders import (
     CreateCreditReminderUseCase,
@@ -35,6 +39,7 @@ from app.application.use_cases.reminders.manage_reminders import (
     RecordPaymentUseCase,
     DeleteReminderUseCase,
     ListDueTodayUseCase,
+    PreviewCreditUseCase,
 )
 from app.application.use_cases.savings.manage_savings import (
     CreateSavingsGoalUseCase,
@@ -43,7 +48,16 @@ from app.application.use_cases.savings.manage_savings import (
 )
 from app.application.use_cases.transactions.add_expense import AddExpenseUseCase
 from app.application.use_cases.transactions.add_income import AddIncomeUseCase
+from app.application.use_cases.transactions.delete_transaction import DeleteTransactionUseCase
 from app.application.use_cases.transactions.get_balance import GetBalanceUseCase
+from app.application.use_cases.users.manage_profile import (
+    GetUserTimezoneUseCase,
+    UpdateUserTimezoneUseCase,
+)
+from app.application.use_cases.transactions.list_transactions import ListTransactionsUseCase
+from app.application.use_cases.transactions.prepare_transaction import PrepareTransactionUseCase
+from app.application.use_cases.transactions.update_transaction import UpdateTransactionUseCase
+from app.infrastructure.currency.provider import CbuUsdRateProvider
 from app.infrastructure.db.repositories.budget import SQLAlchemyBudgetRepository
 from app.infrastructure.db.repositories.category import SQLAlchemyCategoryRepository
 from app.infrastructure.db.repositories.debt import SQLAlchemyDebtRepository
@@ -66,19 +80,48 @@ class Container:
         self._debt_repo = SQLAlchemyDebtRepository(session)
         self._savings_repo = SQLAlchemySavingsRepository(session)
         self._reminder_repo = SQLAlchemyReminderRepository(session)
+        self._usd_rates = CbuUsdRateProvider()
 
     # ── Transactions ──────────────────────────────────────────────────────────
     @property
     def add_expense(self) -> AddExpenseUseCase:
-        return AddExpenseUseCase(self._tx_repo, self._budget_repo)
+        return AddExpenseUseCase(self._tx_repo, self._budget_repo, self._user_repo, self._cat_repo)
 
     @property
     def add_income(self) -> AddIncomeUseCase:
-        return AddIncomeUseCase(self._tx_repo)
+        return AddIncomeUseCase(self._tx_repo, self._user_repo, self._cat_repo)
+
+    @property
+    def get_user_timezone(self) -> GetUserTimezoneUseCase:
+        return GetUserTimezoneUseCase(self._user_repo)
+
+    @property
+    def update_user_timezone(self) -> UpdateUserTimezoneUseCase:
+        return UpdateUserTimezoneUseCase(self._user_repo)
 
     @property
     def get_balance(self) -> GetBalanceUseCase:
-        return GetBalanceUseCase(self._tx_repo)
+        return GetBalanceUseCase(self._tx_repo, self._user_repo)
+
+    @property
+    def prepare_transaction(self) -> PrepareTransactionUseCase:
+        return PrepareTransactionUseCase(self._cat_repo, self._usd_rates)
+
+    @property
+    def usd_rates(self) -> CbuUsdRateProvider:
+        return self._usd_rates
+
+    @property
+    def list_transactions(self) -> ListTransactionsUseCase:
+        return ListTransactionsUseCase(self._tx_repo)
+
+    @property
+    def update_transaction(self) -> UpdateTransactionUseCase:
+        return UpdateTransactionUseCase(self._tx_repo, self._cat_repo, self._user_repo, self._usd_rates)
+
+    @property
+    def delete_transaction(self) -> DeleteTransactionUseCase:
+        return DeleteTransactionUseCase(self._tx_repo, self._user_repo)
 
     # ── Categories ────────────────────────────────────────────────────────────
     @property
@@ -88,6 +131,10 @@ class Container:
     @property
     def list_categories(self) -> ListCategoriesUseCase:
         return ListCategoriesUseCase(self._cat_repo)
+
+    @property
+    def list_all_categories(self) -> ListAllCategoriesUseCase:
+        return ListAllCategoriesUseCase(self._cat_repo)
 
     @property
     def create_category(self) -> CreateCategoryUseCase:
@@ -108,7 +155,7 @@ class Container:
     # ── Budgets ───────────────────────────────────────────────────────────────
     @property
     def set_budget(self) -> SetBudgetUseCase:
-        return SetBudgetUseCase(self._budget_repo)
+        return SetBudgetUseCase(self._budget_repo, self._cat_repo)
 
     @property
     def list_budgets(self) -> ListBudgetsUseCase:
@@ -118,10 +165,18 @@ class Container:
     def delete_budget(self) -> DeleteBudgetUseCase:
         return DeleteBudgetUseCase(self._budget_repo)
 
+    @property
+    def get_budget_progress(self) -> GetBudgetProgressUseCase:
+        return GetBudgetProgressUseCase(self._budget_repo, self._tx_repo)
+
     # ── Analytics ─────────────────────────────────────────────────────────────
     @property
     def get_report(self) -> GetReportUseCase:
         return GetReportUseCase(self._tx_repo)
+
+    @property
+    def list_report_months(self) -> ListReportMonthsUseCase:
+        return ListReportMonthsUseCase(self._tx_repo)
 
     # ── Debts ─────────────────────────────────────────────────────────────────
     @property
@@ -136,6 +191,10 @@ class Container:
     def list_debts(self) -> ListDebtsUseCase:
         return ListDebtsUseCase(self._debt_repo)
 
+    @property
+    def delete_debt(self) -> DeleteDebtUseCase:
+        return DeleteDebtUseCase(self._debt_repo)
+
     # ── Savings ───────────────────────────────────────────────────────────────
     @property
     def create_savings_goal(self) -> CreateSavingsGoalUseCase:
@@ -143,13 +202,21 @@ class Container:
 
     @property
     def add_to_savings(self) -> AddToSavingsUseCase:
-        return AddToSavingsUseCase(self._savings_repo, self._tx_repo)
+        return AddToSavingsUseCase(self._savings_repo, self._tx_repo, self._user_repo)
 
     @property
     def list_savings(self) -> ListSavingsUseCase:
         return ListSavingsUseCase(self._savings_repo)
 
+    @property
+    def export_transactions(self) -> ExportTransactionsUseCase:
+        return ExportTransactionsUseCase(self._tx_repo)
+
     # ── Reminders ─────────────────────────────────────────────────────────────
+    @property
+    def preview_credit(self) -> PreviewCreditUseCase:
+        return PreviewCreditUseCase()
+
     @property
     def create_credit_reminder(self) -> CreateCreditReminderUseCase:
         return CreateCreditReminderUseCase(self._reminder_repo)

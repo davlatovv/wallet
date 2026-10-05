@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.budget import BudgetEntity, BudgetPeriod
@@ -56,6 +56,14 @@ class SQLAlchemyBudgetRepository(AbstractBudgetRepository):
             )
         ).all()
         return [_to_entity(r.Budget, r.cat_name) for r in rows]
+
+    async def update_limit(self, budget_id, user_id, limit_amount) -> BudgetEntity | None:
+        await self._session.execute(
+            update(Budget)
+            .where(Budget.id == budget_id, Budget.user_id == user_id)
+            .values(limit_amount=limit_amount)
+        )
+        return await self.get_by_id(budget_id, user_id)
 
     async def delete(self, budget_id: int, user_id: int) -> bool:
         result = await self._session.execute(

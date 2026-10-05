@@ -1,7 +1,6 @@
 from datetime import date
 from decimal import Decimal
 
-from dateutil.relativedelta import relativedelta
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +9,7 @@ from app.domain.entities.reminder import (
     ReminderType,
     PaymentType,
     ReminderStatus,
+    next_payment_date,
 )
 from app.domain.repositories.abstract_reminder import AbstractReminderRepository
 from app.infrastructure.db.models.reminder import Reminder
@@ -102,39 +102,40 @@ class SQLAlchemyReminderRepository(AbstractReminderRepository):
         ).scalars().all()
         return [_to_entity(r) for r in rows]
 
-    async def record_payment(self, reminder_id: int, user_id: int, amount: Decimal) -> ReminderEntity | None:
-        entity = await self.get_by_id(reminder_id, user_id)
-        if not entity or entity.status != ReminderStatus.ACTIVE:
+    async def record_payment(
+        self,
+        reminder_id: int,
+        user_id: int,
+        amount: Decimal,
+        next_payment_amount: Decimal | None = None,
+    ) -> ReminderEntity | None:
+        # Lock the row so a double-tap cannot record the same payment twice.
+        row = (
+            await self._session.execute(
+                select(Reminder)
+                .where(Reminder.id == reminder_id, Reminder.user_id == user_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if row is None or row.status != ReminderStatus.ACTIVE.value:
             return None
 
-        new_paid = entity.paid_amount + amount
-        new_months_paid = entity.months_paid + 1
+        new_paid = row.paid_amount + amount
+        new_months_paid = row.months_paid + 1
+        if row.months_total is not None:
+            completed = new_months_paid >= row.months_total
+        else:
+            completed = row.total_amount is not None and new_paid >= row.total_amount
 
-        # Determine completion
-        completed = False
-        if entity.months_total is not None and new_months_paid >= entity.months_total:
-            completed = True
-        elif entity.total_amount is not None and new_paid >= entity.total_amount:
-            completed = True
-
-        new_status = ReminderStatus.COMPLETED.value if completed else ReminderStatus.ACTIVE.value
-
-        # Advance next payment date by 1 month (only if still active)
-        new_next_date = entity.next_payment_date
+        row.paid_amount = new_paid
+        row.months_paid = new_months_paid
+        row.status = (ReminderStatus.COMPLETED if completed else ReminderStatus.ACTIVE).value
         if not completed:
-            new_next_date = entity.next_payment_date + relativedelta(months=1)
-
-        await self._session.execute(
-            update(Reminder)
-            .where(Reminder.id == reminder_id, Reminder.user_id == user_id)
-            .values(
-                paid_amount=new_paid,
-                months_paid=new_months_paid,
-                next_payment_date=new_next_date,
-                status=new_status,
-            )
-        )
-        return await self.get_by_id(reminder_id, user_id)
+            row.next_payment_date = next_payment_date(row.next_payment_date, row.payment_day)
+            if next_payment_amount is not None:
+                row.payment_amount = next_payment_amount
+        await self._session.flush()
+        return _to_entity(row)
 
     async def delete(self, reminder_id: int, user_id: int) -> bool:
         result = await self._session.execute(

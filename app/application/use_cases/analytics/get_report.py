@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 from enum import Enum
 
@@ -11,6 +12,7 @@ class ReportPeriod(str, Enum):
     DAY = "day"
     WEEK = "week"
     MONTH = "month"
+    YEAR = "year"
 
 
 @dataclass
@@ -37,24 +39,35 @@ class ReportResult:
         return self.total_income - self.total_expense - self.total_savings
 
 
-def _period_range(period: ReportPeriod) -> tuple[datetime, datetime]:
-    now = datetime.now(timezone.utc)
+def _period_range(period: ReportPeriod, tz_name: str = "UTC") -> tuple[datetime, datetime]:
+    """"Today"/"this week"/"this month"/"this year" are boundaries in the user's own
+    timezone, converted back to UTC-aware datetimes for querying (transactions are
+    stored in UTC, and aware-to-aware comparison is timezone-independent)."""
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:  # unknown/invalid tz stored somehow: fail safe to UTC
+        tz = timezone.utc
+    now = datetime.now(tz)
     if period == ReportPeriod.DAY:
         from_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif period == ReportPeriod.WEEK:
         from_dt = now - timedelta(days=now.weekday())
         from_dt = from_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == ReportPeriod.YEAR:
+        from_dt = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     else:  # month
         from_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    return from_dt, now
+    return from_dt.astimezone(timezone.utc), now.astimezone(timezone.utc)
 
 
 class GetReportUseCase:
     def __init__(self, transaction_repo: AbstractTransactionRepository) -> None:
         self._tx_repo = transaction_repo
 
-    async def execute(self, user_id: int, period: ReportPeriod) -> ReportResult:
-        from_dt, to_dt = _period_range(period)
+    async def execute(
+        self, user_id: int, period: ReportPeriod, timezone: str = "UTC"
+    ) -> ReportResult:
+        from_dt, to_dt = _period_range(period, timezone)
 
         income = await self._tx_repo.sum_by_period(user_id, from_dt, to_dt, TransactionType.INCOME)
         expense = await self._tx_repo.sum_by_period(user_id, from_dt, to_dt, TransactionType.EXPENSE)
@@ -80,3 +93,12 @@ class GetReportUseCase:
             expense_by_category=to_breakdown(expense_cats, expense),
             income_by_category=to_breakdown(income_cats, income),
         )
+
+
+class ListReportMonthsUseCase:
+    def __init__(self, transaction_repo: AbstractTransactionRepository) -> None:
+        self._tx_repo = transaction_repo
+
+    async def execute(self, user_id: int) -> list[tuple[int, int]]:
+        """(year, month) pairs that have transactions, newest first."""
+        return await self._tx_repo.list_available_months(user_id)
